@@ -24,7 +24,7 @@ extension CharStream {
                 return matchIdentifier()
             case "0" ... "9":
                 return matchNumber()
-            case "+", "-", "*", "/":
+            case _ where isOperatorCharacter(c):
                 return matchOperator()
             case " ", "\t", "\n":
                 popFront()
@@ -68,7 +68,11 @@ extension CharStream {
     }
 
     private func matchOperator() -> Token {
-        let source = String(self.take(while: {"+-*/".contains($0)}))
+        let source = String(self.take(while: isOperatorCharacter))
         return Operator(asString: source, numLine: actualLineNumber, numRow: actualRowNumber)
     }
+}
+
+func isOperatorCharacter(_ c: Character) -> Bool {
+    return "+-*/=".contains(c)
 }

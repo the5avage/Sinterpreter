@@ -37,6 +37,8 @@ class Identifier : Token
 
 class Operator : Token
 {
+    var isRightAssociative: Int = 0
+
     override init(asString: String, numLine: Int, numRow: Int)
     {
         super.init(asString: asString, numLine: numLine, numRow: numRow)
@@ -44,6 +46,9 @@ class Operator : Token
             fatalError("Unknown operator: \(self)")
         }
         self.lbp = lbp
+        if rightAssociativeOperators.contains(asString) {
+            isRightAssociative = 1
+        }
     }
 
     override func nud<T>(tokens: TokenStream<T>) -> Node {
@@ -58,7 +63,7 @@ class Operator : Token
     override func led<T>(left: Node, tokens: TokenStream<T>) -> Node {
         var result = Node(token: self)
         result.children.append(left)
-        result.children.append(parse(tokens: tokens, rbp: lbp)!)
+        result.children.append(parse(tokens: tokens, rbp: lbp - isRightAssociative)!)
         return result
     }
 }
@@ -73,5 +78,6 @@ class Number : Token
 class InvalidToken : Token
 {}
 
-let leftBindingPower: [String: Int] = ["+" : 10, "-" : 10, "*" : 20, "/" : 20]
+let leftBindingPower: [String: Int] = ["=" : 5, "+" : 10, "-" : 10, "*" : 20, "/" : 20]
+let rightAssociativeOperators: [String] = ["="]
 let prefixOperators = ["-"]
