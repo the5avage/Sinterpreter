@@ -78,6 +78,13 @@ class Number : Token
 class InvalidToken : Token
 {}
 
+class Delimiter : Token
+{
+    override func nud<T>(tokens: TokenStream<T>) -> Node {
+        return parse(tokens: tokens, rbp: 0)!
+    }
+}
+
 let leftBindingPower: [String: Int] = ["=" : 5, "+" : 10, "-" : 10, "*" : 20, "/" : 20]
 let rightAssociativeOperators: [String] = ["="]
 let prefixOperators = ["-"]

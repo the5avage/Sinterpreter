@@ -26,7 +26,9 @@ extension CharStream {
                 return matchNumber()
             case _ where isOperatorCharacter(c):
                 return matchOperator()
-            case " ", "\t", "\n":
+            case "\n":
+                return matchNewline()
+            case " ", "\t":
                 popFront()
             default:
                 fatalError("Unexpected character \"\(c)\" Line: \(actualLineNumber) Row: \(actualRowNumber)")
@@ -70,6 +72,10 @@ extension CharStream {
     private func matchOperator() -> Token {
         let source = String(self.take(while: isOperatorCharacter))
         return Operator(asString: source, numLine: actualLineNumber, numRow: actualRowNumber)
+    }
+
+    private func matchNewline() -> Token {
+        return Delimiter(asString: String(next()!), numLine: actualLineNumber, numRow: actualRowNumber)
     }
 }
 
