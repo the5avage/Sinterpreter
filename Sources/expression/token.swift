@@ -59,23 +59,6 @@ class Operator : Token
         }
         self.lbp = lbp
     }
-/*
-    override func nud(tokens: inout ArraySlice<Token>) -> Node {
-        if !prefixOperators.contains(asString) {
-            fatalError("No prefix operator: \(self)")
-        }
-        var result = Node(token: self)
-        result.children.append(parse(tokens: &tokens, rbp: 30)!)
-        return result
-    }
-
-    override func led(left: Node, tokens: inout ArraySlice<Token>) -> Node {
-        var result = Node(token: self)
-        result.children.append(left)
-        result.children.append(parse(tokens: &tokens, rbp: lbp)!)
-        return result
-    }
-    */
 
     override func nud(tokens: TokenStream) -> Node {
         if !prefixOperators.contains(asString) {

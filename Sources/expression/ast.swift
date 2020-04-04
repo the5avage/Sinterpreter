@@ -21,18 +21,6 @@ struct Node : CustomStringConvertible
         return result
     }
 }
-/*
-func parse(tokens: inout ArraySlice<Token>, rbp: Int) -> Node?
-{
-    guard var left = tokens.popFirst()?.nud(tokens: &tokens) else {
-        return nil
-    }
-    while let tok = tokens.first, rbp < tok.lbp {
-        tokens.removeFirst()
-        left = tok.led(left: left, tokens: &tokens)
-    }
-    return left
-}*/
 
 func parse(tokens: TokenStream, rbp: Int) -> Node?
 {
