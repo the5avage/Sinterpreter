@@ -17,22 +17,12 @@ class Token : CustomStringConvertible
         return "\(String(describing: type(of: self))): \"\(asString)\" Line: \(numLine) Row: \(numRow)"
     }
 
-    func nud(tokens: inout ArraySlice<Token>) -> Node
+    func nud<T>(tokens: TokenStream<T>) -> Node
     {
         fatalError("Nud not implemented. \(String(describing: type(of: self))) \(asString)")
     }
 
-    func led(left: Node, tokens: inout ArraySlice<Token>) -> Node
-    {
-        fatalError("Led not implemented. \(String(describing: type(of: self)))")
-    }
-
-    func nud(tokens: TokenStream) -> Node
-    {
-        fatalError("Nud not implemented. \(String(describing: type(of: self))) \(asString)")
-    }
-
-    func led(left: Node, tokens: TokenStream) -> Node
+    func led<T>(left: Node, tokens: TokenStream<T>) -> Node
     {
         fatalError("Led not implemented. \(String(describing: type(of: self)))")
     }
@@ -40,11 +30,7 @@ class Token : CustomStringConvertible
 
 class Identifier : Token
 {
-    override func nud(tokens: inout ArraySlice<Token>) -> Node {
-        return Node(token: self)
-    }
-
-    override func nud(tokens: TokenStream) -> Node {
+    override func nud<T>(tokens: TokenStream<T>) -> Node {
         return Node(token: self)
     }
 }
@@ -60,7 +46,7 @@ class Operator : Token
         self.lbp = lbp
     }
 
-    override func nud(tokens: TokenStream) -> Node {
+    override func nud<T>(tokens: TokenStream<T>) -> Node {
         if !prefixOperators.contains(asString) {
             fatalError("No prefix operator: \(self)")
         }
@@ -69,7 +55,7 @@ class Operator : Token
         return result
     }
 
-    override func led(left: Node, tokens: TokenStream) -> Node {
+    override func led<T>(left: Node, tokens: TokenStream<T>) -> Node {
         var result = Node(token: self)
         result.children.append(left)
         result.children.append(parse(tokens: tokens, rbp: lbp)!)
@@ -79,11 +65,7 @@ class Operator : Token
 
 class Number : Token
 {
-    override func nud(tokens: inout ArraySlice<Token>) -> Node {
-        return Node(token: self)
-    }
-
-    override func nud(tokens: TokenStream) -> Node {
+    override func nud<T>(tokens: TokenStream<T>) -> Node {
         return Node(token: self)
     }
 }

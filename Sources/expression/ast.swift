@@ -22,7 +22,7 @@ struct Node : CustomStringConvertible
     }
 }
 
-func parse(tokens: TokenStream, rbp: Int) -> Node?
+func parse<T>(tokens: TokenStream<T>, rbp: Int) -> Node?
 {
     guard var left = tokens.next()?.nud(tokens: tokens) else {
         return nil
@@ -38,7 +38,7 @@ struct Tree : CustomStringConvertible
 {
     var children: [Node] = []
 
-    init(tokens: TokenStream)
+    init<T>(tokens: TokenStream<T>)
     {
         while let node = parse(tokens: tokens, rbp: 0) {
             children.append(node)

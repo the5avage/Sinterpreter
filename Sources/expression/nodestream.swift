@@ -1,7 +1,7 @@
-class NodeStream {
-    let source: TokenStream
+class NodeStream<S: Sequence> where S.Element == Character {
+    let source: TokenStream<S>
 
-    init(from: TokenStream) {
+    init(from: TokenStream<S>) {
         source = from
     }
 

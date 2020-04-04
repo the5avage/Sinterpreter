@@ -1,14 +1,14 @@
 import Range
 
-class TokenStream : ForwardRange {
+class TokenStream<S: Sequence> : ForwardRange where S.Element == Character {
     typealias Element = Token
 
-    var source: CharStream
+    var source: CharStream<S>
     var front: Token?
 
-    init(_ str: Substring) {
-        source = CharStream(str)
-        front = source.matchToken()
+    init(_ source: S) {
+        self.source = CharStream(source)
+        front = self.source.matchToken()
     }
 
     func popFront() {
@@ -36,7 +36,7 @@ extension CharStream {
     }
 
     private func matchIdentifier() -> Token {
-        let str = String(self.take(while: {
+        let source = String(self.take(while: {
             switch $0 {
             case "A" ... "z", "_", "0" ... "9":
                 return true
@@ -44,12 +44,12 @@ extension CharStream {
                 return false
             }
         }))
-        return Identifier(asString: str, numLine: actualLineNumber, numRow: actualRowNumber)
+        return Identifier(asString: source, numLine: actualLineNumber, numRow: actualRowNumber)
     }
 
     private func matchNumber() -> Token {
         var containsPoint = false
-        let str = String(self.take(while: {
+        let source = String(self.take(while: {
             switch $0 {
             case "0" ... "9":
                 return true
@@ -64,11 +64,11 @@ extension CharStream {
                 return false
             }
         }))
-        return Number(asString: str, numLine: actualLineNumber, numRow: actualRowNumber)
+        return Number(asString: source, numLine: actualLineNumber, numRow: actualRowNumber)
     }
 
     private func matchOperator() -> Token {
-        let str = String(self.take(while: {"+-*/".contains($0)}))
-        return Operator(asString: str, numLine: actualLineNumber, numRow: actualRowNumber)
+        let source = String(self.take(while: {"+-*/".contains($0)}))
+        return Operator(asString: source, numLine: actualLineNumber, numRow: actualRowNumber)
     }
 }
