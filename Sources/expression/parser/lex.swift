@@ -1,12 +1,12 @@
 import Range
 
-class TokenStream<S: Sequence> : ForwardRange where S.Element == Character {
+class TokenStream<R: ForwardRange> : ForwardRange where R.Element == Character {
     typealias Element = Token
 
-    var source: CharStream<S>
+    var source: CharStream<R>
     var front: Token?
 
-    init(from: CharStream<S>) {
+    init(from: CharStream<R>) {
         source = from
         front = source.matchToken()
     }

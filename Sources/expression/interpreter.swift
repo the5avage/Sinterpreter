@@ -1,3 +1,5 @@
+import Range
+
 let unaryOperatorAction: [String : (Node) -> Double] = ["-" : { -evaluate($0) }]
 
 let binaryOperatorAction: [String : (Node, Node) -> Double] = [
@@ -44,10 +46,10 @@ func evaluate(_ node: Node) -> Double {
     fatalError("There are no operators with more than 2 children yet")
 }
 
-struct Interpreter<S: Sequence> where S.Element == Character {
-    let source: NodeStream<S>
+struct Interpreter<R: ForwardRange> where R.Element == Character {
+    let source: NodeStream<R>
 
-    init(source: NodeStream<S>) {
+    init(source: NodeStream<R>) {
         self.source = source
     }
 

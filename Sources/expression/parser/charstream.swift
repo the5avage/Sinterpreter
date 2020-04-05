@@ -1,21 +1,22 @@
 import Swift
 import Range
 
-class CharStream<S: Sequence>  : ForwardRange where S.Element == Character {
+class CharStream<R: ForwardRange> : ForwardRange where R.Element == Character {
     typealias Element = Character
 
     var actualLineNumber: Int = 1
     var actualRowNumber: Int = 1
     var front: Character?
-    var remaining: S.Iterator
+    var remaining: R
 
-    init(from: S) {
-        remaining = from.makeIterator()
-        front = remaining.next()
+    init(from: R) {
+        remaining = from
+        front = remaining.front
     }
 
     func popFront() {
-        front = remaining.next()
+        remaining.popFront()
+        front = remaining.front
         if front == "\n" {
             actualLineNumber += 1
             actualRowNumber = 0
