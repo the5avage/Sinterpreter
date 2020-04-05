@@ -22,6 +22,16 @@ struct Node : CustomStringConvertible
     }
 }
 
+func parseStatement<T>(tokens: TokenStream<T>) -> Node? {
+    let result = parse(tokens: tokens, rbp: 0)
+    if tokens.front != nil && type(of: tokens.front!) != Delimiter.self {
+        fatalError("Expected newline after statement: \(tokens.front!)")
+    } else {
+        tokens.popFront()
+    }
+    return result
+}
+
 func parse<T>(tokens: TokenStream<T>, rbp: Int) -> Node?
 {
     guard var left = tokens.next()?.nud(tokens: tokens) else {

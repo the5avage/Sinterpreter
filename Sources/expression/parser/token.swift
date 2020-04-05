@@ -80,9 +80,18 @@ class InvalidToken : Token
 
 class Delimiter : Token
 {
+    override init(asString: String, numLine: Int, numRow: Int) {
+        super.init(asString: asString, numLine: numLine, numRow: numRow)
+        self.lbp = -1
+    }
+/*
     override func nud<T>(tokens: TokenStream<T>) -> Node {
         return parse(tokens: tokens, rbp: 0)!
     }
+    override func led<T>(left: Node, tokens: TokenStream<T>) -> Node {
+        return left
+    }
+    */
 }
 
 let leftBindingPower: [String: Int] = ["=" : 5, "+" : 10, "-" : 10, "*" : 20, "/" : 20]

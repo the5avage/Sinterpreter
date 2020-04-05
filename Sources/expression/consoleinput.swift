@@ -11,7 +11,6 @@ class ConsoleStream : ForwardRange {
                 return nil
             }
             buffer = newBuffer[...]
-            buffer.append("\n")    // otherwise parser triest to fetch new line before result is shown on screen
         }
         return buffer.first
     }

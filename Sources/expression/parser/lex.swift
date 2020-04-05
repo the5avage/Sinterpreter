@@ -4,15 +4,24 @@ class TokenStream<R: ForwardRange> : ForwardRange where R.Element == Character {
     typealias Element = Token
 
     var source: CharStream<R>
-    var front: Token?
+    var _front: Token?
+
+    var frontIsValid: Bool = false
+
+    var front: Token? {
+        if !frontIsValid {
+            _front = source.matchToken()
+            frontIsValid = true
+        }
+        return _front
+    }
 
     init(from: CharStream<R>) {
         source = from
-        front = source.matchToken()
     }
 
     func popFront() {
-        front = source.matchToken()
+        frontIsValid = false
     }
 }
 
