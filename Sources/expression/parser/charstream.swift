@@ -9,8 +9,8 @@ class CharStream<S: Sequence>  : ForwardRange where S.Element == Character {
     var front: Character?
     var remaining: S.Iterator
 
-    init(_ source: S) {
-        remaining = source.makeIterator()
+    init(from: S) {
+        remaining = from.makeIterator()
         front = remaining.next()
     }
 

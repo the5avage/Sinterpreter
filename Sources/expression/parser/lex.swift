@@ -6,9 +6,9 @@ class TokenStream<S: Sequence> : ForwardRange where S.Element == Character {
     var source: CharStream<S>
     var front: Token?
 
-    init(_ source: S) {
-        self.source = CharStream(source)
-        front = self.source.matchToken()
+    init(from: CharStream<S>) {
+        source = from
+        front = source.matchToken()
     }
 
     func popFront() {
