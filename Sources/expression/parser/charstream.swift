@@ -18,7 +18,7 @@ class CharStream<S: Sequence>  : ForwardRange where S.Element == Character {
         front = remaining.next()
         if front == "\n" {
             actualLineNumber += 1
-            actualRowNumber = 1
+            actualRowNumber = 0
         } else {
             actualRowNumber += 1
         }
