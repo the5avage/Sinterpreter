@@ -24,7 +24,10 @@ func evaluate(_ node: Node) -> Double {
         if type(of: node.token) == Number.self {
             return Double(node.token.asString)!
         } else if type(of: node.token) == Identifier.self {
-            return variables[node.token.asString]!
+            guard let result = variables[node.token.asString] else {
+                fatalError("Variable \(node.token.asString) was not defined")
+            }
+            return result
         }
         fatalError("Token \(node.token) can't be a leaf node")
     } else if node.children.count == 1 {
@@ -49,8 +52,9 @@ struct Interpreter<S: Sequence> where S.Element == Character {
     }
 
     func run() {
-        while let node: Node = source.next() {
+        while let node = source.front {
             print(evaluate(node))
+            source.popFront()
         }
     }
 }
