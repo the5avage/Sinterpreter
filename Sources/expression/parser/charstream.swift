@@ -19,7 +19,7 @@ class CharStream<R: ForwardRange> : ForwardRange where R.Element == Character {
     func popFront() {
         if front == "\n" {
             actualLineNumber += 1
-            actualRowNumber = 0
+            actualRowNumber = 1
         } else {
             actualRowNumber += 1
         }
