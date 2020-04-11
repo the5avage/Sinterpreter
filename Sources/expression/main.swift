@@ -5,7 +5,7 @@ import Range
 
 let chars = CharStream<ConsoleStream>(from: ConsoleStream())
 let tokens = TokenStream(from: chars)
-let nodes = NodeStream(from: tokens)
+let nodes = ExpressionStream(from: tokens)
 
 let interpreter = Interpreter(source: nodes)
 

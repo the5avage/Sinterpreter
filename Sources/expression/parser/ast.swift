@@ -1,28 +1,22 @@
-struct Node : CustomStringConvertible
-{
-    var token: Token
-    var children: [Node] = []
-
-    init(token: Token)
-    {
-        self.token = token
-    }
+enum Expression : CustomStringConvertible {
+    case Leaf(Token)
+    indirect case Unary(Token, Expression)
+    indirect case Binary(Token, Expression, Expression)
 
     var description: String
     {
-        if children.isEmpty {
-            return String(token.asString)
+        switch self {
+            case .Leaf(let token):
+                return String(token.asString)
+            case .Unary(let token, let child):
+                return "(\(token.asString) \(child.description))"
+            case .Binary(let token, let child1, let child2):
+                return "(\(token.asString) \(child1.description) \(child2.description))"
         }
-        var result = "(\(token.asString)"
-        for child in children {
-            result.append(" \(child.description)")
-        }
-        result.append(")")
-        return result
     }
 }
 
-func parseStatement<T>(tokens: TokenStream<T>) -> Node? {
+func parseStatement<T>(tokens: TokenStream<T>) -> Expression? {
     let result = parse(tokens: tokens, rbp: 0)
     if tokens.front != nil && type(of: tokens.front!) != Delimiter.self {
         fatalError("Expected newline after statement: \(tokens.front!)")
@@ -32,7 +26,7 @@ func parseStatement<T>(tokens: TokenStream<T>) -> Node? {
     return result
 }
 
-func parse<T>(tokens: TokenStream<T>, rbp: Int) -> Node?
+func parse<T>(tokens: TokenStream<T>, rbp: Int) -> Expression?
 {
     guard var left = tokens.next()?.nud(tokens: tokens) else {
         return nil
@@ -46,7 +40,7 @@ func parse<T>(tokens: TokenStream<T>, rbp: Int) -> Node?
 
 struct Tree : CustomStringConvertible
 {
-    var children: [Node] = []
+    var children: [Expression] = []
 
     init<T>(tokens: TokenStream<T>)
     {

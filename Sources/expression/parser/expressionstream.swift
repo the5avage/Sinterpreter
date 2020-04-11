@@ -1,11 +1,11 @@
 import Range
 
-class NodeStream<R: ForwardRange> : ForwardRange where R.Element == Character {
+class ExpressionStream<R: ForwardRange> : ForwardRange where R.Element == Character {
     let source: TokenStream<R>
-    var _front: Node?
+    var _front: Expression?
     var _frontIsValid = false
 
-    var front: Node? {
+    var front: Expression? {
         if !_frontIsValid {
             _front = parseStatement(tokens: source)
             _frontIsValid = true

@@ -17,12 +17,12 @@ class Token : CustomStringConvertible
         return "\(String(describing: type(of: self))): \"\(asString)\" Line: \(numLine) Row: \(numRow)"
     }
 
-    func nud<T>(tokens: TokenStream<T>) -> Node
+    func nud<T>(tokens: TokenStream<T>) -> Expression
     {
         fatalError("Nud not implemented. \(String(describing: type(of: self))) \(asString)")
     }
 
-    func led<T>(left: Node, tokens: TokenStream<T>) -> Node
+    func led<T>(left: Expression, tokens: TokenStream<T>) -> Expression
     {
         fatalError("Led not implemented. \(String(describing: type(of: self)))")
     }
@@ -30,8 +30,8 @@ class Token : CustomStringConvertible
 
 class Identifier : Token
 {
-    override func nud<T>(tokens: TokenStream<T>) -> Node {
-        return Node(token: self)
+    override func nud<T>(tokens: TokenStream<T>) -> Expression {
+        return Expression.Leaf(self)
     }
 }
 
@@ -51,27 +51,22 @@ class Operator : Token
         }
     }
 
-    override func nud<T>(tokens: TokenStream<T>) -> Node {
+    override func nud<T>(tokens: TokenStream<T>) -> Expression {
         if !prefixOperators.contains(asString) {
             fatalError("No prefix operator: \(self)")
         }
-        var result = Node(token: self)
-        result.children.append(parse(tokens: tokens, rbp: 30)!)
-        return result
+        return Expression.Unary(self, parse(tokens: tokens, rbp: 30)!)
     }
 
-    override func led<T>(left: Node, tokens: TokenStream<T>) -> Node {
-        var result = Node(token: self)
-        result.children.append(left)
-        result.children.append(parse(tokens: tokens, rbp: lbp - isRightAssociative)!)
-        return result
+    override func led<T>(left: Expression, tokens: TokenStream<T>) -> Expression {
+        return Expression.Binary(self, left, parse(tokens: tokens, rbp: lbp - isRightAssociative)!)
     }
 }
 
 class Number : Token
 {
-    override func nud<T>(tokens: TokenStream<T>) -> Node {
-        return Node(token: self)
+    override func nud<T>(tokens: TokenStream<T>) -> Expression {
+        return Expression.Leaf(self)
     }
 }
 

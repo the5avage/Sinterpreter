@@ -1,8 +1,8 @@
 import Range
 
-let unaryOperatorAction: [String : (Node) -> Double] = ["-" : { -evaluate($0) }]
+let unaryOperatorAction: [String : (Expression) -> Double] = ["-" : { -evaluate($0) }]
 
-let binaryOperatorAction: [String : (Node, Node) -> Double] = [
+let binaryOperatorAction: [String : (Expression, Expression) -> Double] = [
     "+" : { evaluate($0) + evaluate($1) },
     "-" : { evaluate($0) - evaluate($1) },
     "*" : { evaluate($0) * evaluate($1) },
@@ -10,46 +10,46 @@ let binaryOperatorAction: [String : (Node, Node) -> Double] = [
     "=" : assignmentOperatorAction
 ]
 
-func assignmentOperatorAction(left: Node, right: Node) -> Double {
-    if type(of: left.token) != Identifier.self || left.children.count != 0 {
-        fatalError("\(left) is not an L-Value")
+func assignmentOperatorAction(left: Expression, right: Expression) -> Double {
+    if case .Leaf(let token) = left, type(of: token) == Identifier.self {
+        let result = evaluate(right)
+        variables.updateValue(result, forKey: token.asString)
+        return result
     }
-    let result = evaluate(right)
-    variables.updateValue(result, forKey: left.token.asString)
-    return result
+    fatalError("\(left) is not an L-Value")
 }
 
 var variables: [String : Double] = [:]
 
-func evaluate(_ node: Node) -> Double {
-    if node.children.count == 0 {
-        if type(of: node.token) == Number.self {
-            return Double(node.token.asString)!
-        } else if type(of: node.token) == Identifier.self {
-            guard let result = variables[node.token.asString] else {
-                fatalError("Variable \(node.token.asString) was not defined")
+func evaluate(_ node: Expression) -> Double {
+    switch node {
+        case .Leaf(let token):
+            if type(of: token) == Number.self {
+                return Double(token.asString)!
+            } else if type(of: token) == Identifier.self {
+                guard let result = variables[token.asString] else {
+                    fatalError("Variable \(token.asString) was not defined")
+                }
+                return result
             }
-            return result
-        }
-        fatalError("Token \(node.token) can't be a leaf node")
-    } else if node.children.count == 1 {
-        guard let action = unaryOperatorAction[node.token.asString] else {
-            fatalError("No action for unary operator \(node.token)")
-        }
-        return action(node.children[0])
-    } else if node.children.count == 2 {
-        guard let action = binaryOperatorAction[node.token.asString] else {
-            fatalError("No action for binary operator \(node.token)")
-        }
-        return action(node.children[0], node.children[1])
+            fatalError("Token \(token) can't be a leaf node")
+        case .Unary(let token, let child):
+            guard let action = unaryOperatorAction[token.asString] else {
+                fatalError("No action for unary operator \(token)")
+            }
+        return action(child)
+        case .Binary(let token, let child1, let child2):
+            guard let action = binaryOperatorAction[token.asString] else {
+                fatalError("No action for binary operator \(token)")
+            }
+            return action(child1, child2)
     }
-    fatalError("There are no operators with more than 2 children yet")
 }
 
 struct Interpreter<R: ForwardRange> where R.Element == Character {
-    let source: NodeStream<R>
+    let source: ExpressionStream<R>
 
-    init(source: NodeStream<R>) {
+    init(source: ExpressionStream<R>) {
         self.source = source
     }
 
