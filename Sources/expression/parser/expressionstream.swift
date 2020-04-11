@@ -1,9 +1,9 @@
 import Range
 
-class ExpressionStream<R: ForwardRange> : ForwardRange where R.Element == Character {
+class ExpressionStream : ForwardRange {
     typealias Element = Expression
 
-    let source: TokenStream<R>
+    let source: TokenStream
     var _front: Expression?
     var _frontIsValid = false
 
@@ -15,7 +15,7 @@ class ExpressionStream<R: ForwardRange> : ForwardRange where R.Element == Charac
         return _front
     }
 
-    init(from: TokenStream<R>) {
+    init(from: TokenStream) {
         source = from
     }
 

@@ -16,9 +16,9 @@ enum Expression : CustomStringConvertible {
     }
 }
 
-func parseStatement<T>(tokens: TokenStream<T>) -> Expression? {
+func parseStatement(tokens: TokenStream) -> Expression? {
     let result = parse(tokens: tokens, rbp: 0)
-    if tokens.front != nil && type(of: tokens.front!) != Delimiter.self {
+    if let tok = tokens.front, tok.type != .Delimiter {
         fatalError("Expected newline after statement: \(tokens.front!)")
     } else {
         tokens.popFront()
@@ -26,7 +26,7 @@ func parseStatement<T>(tokens: TokenStream<T>) -> Expression? {
     return result
 }
 
-func parse<T>(tokens: TokenStream<T>, rbp: Int) -> Expression?
+func parse(tokens: TokenStream, rbp: Int) -> Expression?
 {
     guard var left = tokens.next()?.nud(tokens: tokens) else {
         return nil
@@ -42,7 +42,7 @@ struct Tree : CustomStringConvertible
 {
     var children: [Expression] = []
 
-    init<T>(from: ExpressionStream<T>) {
+    init(from: ExpressionStream) {
         for node in from {
             children.append(node)
         }

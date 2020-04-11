@@ -1,4 +1,55 @@
-class Token : CustomStringConvertible
+enum TokenType {
+    case Identifier
+    case Number
+    case Operator
+    case Delimiter
+}
+
+struct Token : CustomStringConvertible {
+    let type: TokenType
+    let asString: String
+    let numLine: Int
+    let numRow: Int
+    var lbp: Int = 0
+
+    init(type: TokenType, asString: String, numLine: Int, numRow: Int)
+    {
+        self.type = type
+        self.asString = asString
+        self.numLine = numLine
+        self.numRow = numRow
+    }
+
+    var description: String
+    {
+        return "\(type): \"\(asString)\" Line: \(numLine) Row: \(numRow)"
+    }
+
+    func nud(tokens: TokenStream) -> Expression
+    {
+        switch self.type {
+            case .Identifier, .Number:
+                return nudAtom(tokens: tokens)
+            default:
+                fatalError("Nud not implemented. \(self)")
+        }
+    }
+
+    func led(left: Expression, tokens: TokenStream) -> Expression
+    {
+        fatalError("Led not implemented. \(self)")
+    }
+
+    private func nudAtom(tokens: TokenStream) -> Expression {
+        return Expression.Leaf(self)
+    }
+
+    private func nudOperator(tokens: TokenStream) -> Expression {
+        return Expression.Leaf(self)
+    }
+}
+
+/*class Token : CustomStringConvertible
 {
     let asString: String
     let numLine: Int
@@ -84,3 +135,4 @@ class Delimiter : Token
 let leftBindingPower: [String: Int] = ["=" : 5, "+" : 10, "-" : 10, "*" : 20, "/" : 20]
 let rightAssociativeOperators: [String] = ["="]
 let prefixOperators = ["-"]
+*/

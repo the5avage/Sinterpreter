@@ -1,7 +1,7 @@
 import Range
 
 if CommandLine.argc == 1 {
-    let chars = CharStream<ConsoleStream>(from: ConsoleStream())
+    let chars = CharStream(from: ConsoleStream())
     let tokens = TokenStream(from: chars)
     let nodes = ExpressionStream(from: tokens)
     let interpreter = Interpreter(source: nodes)

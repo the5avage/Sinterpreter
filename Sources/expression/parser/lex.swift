@@ -1,9 +1,9 @@
 import Range
 
-class TokenStream<R: ForwardRange> : ForwardRange where R.Element == Character {
+class TokenStream : ForwardRange {
     typealias Element = Token
 
-    var source: CharStream<R>
+    var source: CharStream
     var _front: Token?
 
     var frontIsValid: Bool = false
@@ -16,7 +16,7 @@ class TokenStream<R: ForwardRange> : ForwardRange where R.Element == Character {
         return _front
     }
 
-    init(from: CharStream<R>) {
+    init(from: CharStream) {
         source = from
     }
 
@@ -55,7 +55,10 @@ extension CharStream {
                 return false
             }
         }))
-        return Identifier(asString: source, numLine: actualLineNumber, numRow: actualRowNumber)
+        return Token(type: TokenType.Identifier,
+                        asString: source,
+                        numLine: actualLineNumber,
+                        numRow: actualRowNumber)
     }
 
     private func matchNumber() -> Token {
@@ -75,16 +78,25 @@ extension CharStream {
                 return false
             }
         }))
-        return Number(asString: source, numLine: actualLineNumber, numRow: actualRowNumber)
+        return Token(type: TokenType.Number,
+                        asString: source,
+                        numLine: actualLineNumber,
+                        numRow: actualRowNumber)
     }
 
     private func matchOperator() -> Token {
         let source = String(self.take(while: isOperatorCharacter))
-        return Operator(asString: source, numLine: actualLineNumber, numRow: actualRowNumber)
+        return Token(type: TokenType.Operator,
+                        asString: source,
+                        numLine: actualLineNumber,
+                        numRow: actualRowNumber)
     }
 
     private func matchNewline() -> Token {
-        return Delimiter(asString: String(next()!), numLine: actualLineNumber, numRow: actualRowNumber)
+        return Token(type: TokenType.Delimiter,
+                        asString: String(next()!),
+                        numLine: actualLineNumber,
+                        numRow: actualRowNumber)
     }
 }
 

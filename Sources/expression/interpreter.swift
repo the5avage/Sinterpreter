@@ -11,7 +11,7 @@ let binaryOperatorAction: [String : (Expression, Expression) -> Double] = [
 ]
 
 func assignmentOperatorAction(left: Expression, right: Expression) -> Double {
-    if case .Leaf(let token) = left, type(of: token) == Identifier.self {
+    if case .Leaf(let token) = left, token.type == .Identifier {
         let result = evaluate(right)
         variables.updateValue(result, forKey: token.asString)
         return result
@@ -24,9 +24,9 @@ var variables: [String : Double] = [:]
 func evaluate(_ node: Expression) -> Double {
     switch node {
         case .Leaf(let token):
-            if type(of: token) == Number.self {
+            if token.type == .Number {
                 return Double(token.asString)!
-            } else if type(of: token) == Identifier.self {
+            } else if token.type == .Identifier {
                 guard let result = variables[token.asString] else {
                     fatalError("Variable \(token.asString) was not defined")
                 }
@@ -46,10 +46,10 @@ func evaluate(_ node: Expression) -> Double {
     }
 }
 
-struct Interpreter<R: ForwardRange> where R.Element == Character {
-    let source: ExpressionStream<R>
+struct Interpreter {
+    let source: ExpressionStream
 
-    init(source: ExpressionStream<R>) {
+    init(source: ExpressionStream) {
         self.source = source
     }
 
