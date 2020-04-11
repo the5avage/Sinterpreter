@@ -42,15 +42,13 @@ struct Tree : CustomStringConvertible
 {
     var children: [Expression] = []
 
-    init<T>(tokens: TokenStream<T>)
-    {
-        while let node = parse(tokens: tokens, rbp: 0) {
+    init<T>(from: ExpressionStream<T>) {
+        for node in from {
             children.append(node)
         }
     }
 
-    var description: String
-    {
+    var description: String {
         var result = ""
         for child in children {
             result.append("\(child.description)\n")
