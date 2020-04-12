@@ -5,8 +5,9 @@ let nudTable: [String : (Token, TokenStream) -> Expression] = [
             fatalError("Expected newline after \($0)")
         }
         return parseAtom($0, $1)
-    }
-    ]
+    },
+    "true" : parseAtom,
+    "false" : parseAtom]
 
 let ledTable: [String : (Token, Expression, TokenStream) -> Expression] = [
     "=" : ledOperatorRight(),
@@ -22,7 +23,7 @@ let leftBindingPower: [String : Int] = [
     "*" : 20,
     "/" : 20]
 
-let keywords: Set = ["exit"]
+let keywords: Set = ["exit", "true", "false"]
 
 func parseAtom(_ tok: Token, _ tokens: TokenStream) -> Expression {
     return Expression.Leaf(tok)

@@ -1,16 +1,48 @@
 import Range
 
-let unaryOperatorAction: [String : (Expression) -> Double] = ["-" : { -evaluate($0) }]
+enum Type : CustomStringConvertible {
+    case Double(Double)
+    case Bool(Bool)
 
-let binaryOperatorAction: [String : (Expression, Expression) -> Double] = [
-    "+" : { evaluate($0) + evaluate($1) },
-    "-" : { evaluate($0) - evaluate($1) },
-    "*" : { evaluate($0) * evaluate($1) },
-    "/" : { evaluate($0) / evaluate($1) },
+    var description: String {
+        switch self {
+            case .Double(let d):
+                return String(d)
+            case .Bool(let b):
+                return String(b)
+        }
+    }
+}
+
+let unaryOperatorAction: [String : (Expression) -> Type] = ["-" : unaryActionDouble({ -$0 })]
+
+let binaryOperatorAction: [String : (Expression, Expression) -> Type] = [
+    "+" : binaryActionDouble(+),
+    "-" : binaryActionDouble(-),
+    "*" : binaryActionDouble(*),
+    "/" : binaryActionDouble(/),
     "=" : assignmentOperatorAction
 ]
 
-func assignmentOperatorAction(left: Expression, right: Expression) -> Double {
+func unaryActionDouble(_ action: @escaping (Double) -> (Double)) -> (Expression) -> Type {
+    return {
+        if case let Type.Double(a) = evaluate($0) {
+            return Type.Double(action(a))
+        }
+        fatalError("Expected argument of type double: \($0)")
+    }
+}
+
+func binaryActionDouble(_ action: @escaping (Double, Double) -> (Double)) -> (Expression, Expression) -> Type {
+    return {
+        if case let Type.Double(a) = evaluate($0), case let Type.Double(b) = evaluate($1) {
+            return Type.Double(action(a, b))
+        }
+        fatalError("Expected arguments of type double: \($0) \($1)")
+    }
+}
+
+func assignmentOperatorAction(left: Expression, right: Expression) -> Type {
     if case .Leaf(let token) = left, token.type == .Identifier {
         let result = evaluate(right)
         variables.updateValue(result, forKey: token.asString)
@@ -19,20 +51,29 @@ func assignmentOperatorAction(left: Expression, right: Expression) -> Double {
     fatalError("\(left) is not an L-Value")
 }
 
-var variables: [String : Double] = [:]
+var variables: [String : Type] = [:]
 
-func evaluate(_ node: Expression) -> Double {
+func evaluate(_ node: Expression) -> Type {
     switch node {
         case .Leaf(let token):
-            if token.type == .Number {
-                return Double(token.asString)!
-            } else if token.type == .Identifier {
-                guard let result = variables[token.asString] else {
-                    fatalError("Variable \(token.asString) was not defined")
-                }
-                return result
+            switch token.type {
+                case .Number:
+                    return Type.Double(Double(token.asString)!)
+                case .Identifier:
+                    guard let result = variables[token.asString] else {
+                        fatalError("Variable \(token.asString) was not defined")
+                    }
+                    return result
+                case .Keyword:
+                    if token.asString == "true" {
+                        return Type.Bool(true)
+                    } else if token.asString == "false" {
+                        return Type.Bool(false)
+                    }
+                    fallthrough
+                default:
+                    fatalError("Token \(token) can't be a leaf node")
             }
-            fatalError("Token \(token) can't be a leaf node")
         case .Unary(let token, let child):
             guard let action = unaryOperatorAction[token.asString] else {
                 fatalError("No action for unary operator \(token)")
