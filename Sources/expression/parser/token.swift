@@ -10,129 +10,51 @@ struct Token : CustomStringConvertible {
     let asString: String
     let numLine: Int
     let numRow: Int
-    var lbp: Int = 0
+    let lbp: Int
 
-    init(type: TokenType, asString: String, numLine: Int, numRow: Int)
-    {
+    init(type: TokenType, asString: String, numLine: Int, numRow: Int) {
         self.type = type
         self.asString = asString
         self.numLine = numLine
         self.numRow = numRow
+        if type == .Operator {
+            guard let tmp = leftBindingPower[asString] else {
+                lbp = 0
+                fatalError("Unknown Operator: \(self)")
+            }
+            lbp = tmp
+        } else {
+            lbp = 0
+        }
     }
 
-    var description: String
-    {
+    var description: String {
         return "\(type): \"\(asString)\" Line: \(numLine) Row: \(numRow)"
     }
 
-    func nud(tokens: TokenStream) -> Expression
-    {
+    func nud(tokens: TokenStream) -> Expression {
         switch self.type {
             case .Identifier, .Number:
-                return nudAtom(tokens: tokens)
+                return Expression.Leaf(self)
+            case .Operator:
+                guard let nud = nudTable[self.asString] else {
+                    fatalError("No prefix operator: \(self)")
+                }
+                return nud(self, tokens)
             default:
-                fatalError("Nud not implemented. \(self)")
+                fatalError("Nud not implemented: \(self)")
         }
     }
 
-    func led(left: Expression, tokens: TokenStream) -> Expression
-    {
-        fatalError("Led not implemented. \(self)")
-    }
-
-    private func nudAtom(tokens: TokenStream) -> Expression {
-        return Expression.Leaf(self)
-    }
-
-    private func nudOperator(tokens: TokenStream) -> Expression {
-        return Expression.Leaf(self)
-    }
-}
-
-/*class Token : CustomStringConvertible
-{
-    let asString: String
-    let numLine: Int
-    let numRow: Int
-    var lbp: Int = 0
-
-    init(asString: String, numLine: Int, numRow: Int)
-    {
-        self.asString = asString
-        self.numLine = numLine
-        self.numRow = numRow
-    }
-
-    var description: String
-    {
-        return "\(String(describing: type(of: self))): \"\(asString)\" Line: \(numLine) Row: \(numRow)"
-    }
-
-    func nud<T>(tokens: TokenStream<T>) -> Expression
-    {
-        fatalError("Nud not implemented. \(String(describing: type(of: self))) \(asString)")
-    }
-
-    func led<T>(left: Expression, tokens: TokenStream<T>) -> Expression
-    {
-        fatalError("Led not implemented. \(String(describing: type(of: self)))")
-    }
-}
-
-class Identifier : Token
-{
-    override func nud<T>(tokens: TokenStream<T>) -> Expression {
-        return Expression.Leaf(self)
-    }
-}
-
-class Operator : Token
-{
-    var isRightAssociative: Int = 0
-
-    override init(asString: String, numLine: Int, numRow: Int)
-    {
-        super.init(asString: asString, numLine: numLine, numRow: numRow)
-        guard let lbp = leftBindingPower[asString] else {
-            fatalError("Unknown operator: \(self)")
-        }
-        self.lbp = lbp
-        if rightAssociativeOperators.contains(asString) {
-            isRightAssociative = 1
+    func led(left: Expression, tokens: TokenStream) -> Expression {
+        switch self.type {
+            case .Operator:
+                guard let led = ledTable[self.asString] else {
+                    fatalError("No infix operator: \(self)")
+                }
+                return led(self, left, tokens)
+            default:
+                fatalError("Led not implemented. \(self)")
         }
     }
-
-    override func nud<T>(tokens: TokenStream<T>) -> Expression {
-        if !prefixOperators.contains(asString) {
-            fatalError("No prefix operator: \(self)")
-        }
-        return Expression.Unary(self, parse(tokens: tokens, rbp: 30)!)
-    }
-
-    override func led<T>(left: Expression, tokens: TokenStream<T>) -> Expression {
-        return Expression.Binary(self, left, parse(tokens: tokens, rbp: lbp - isRightAssociative)!)
-    }
 }
-
-class Number : Token
-{
-    override func nud<T>(tokens: TokenStream<T>) -> Expression {
-        return Expression.Leaf(self)
-    }
-}
-
-class InvalidToken : Token
-{}
-
-class Delimiter : Token
-{
-    override init(asString: String, numLine: Int, numRow: Int) {
-        super.init(asString: asString, numLine: numLine, numRow: numRow)
-        self.lbp = -1
-    }
-}
-
-let leftBindingPower: [String: Int] = ["=" : 5, "+" : 10, "-" : 10, "*" : 20, "/" : 20]
-let rightAssociativeOperators: [String] = ["="]
-let prefixOperators = ["-"]
-*/
