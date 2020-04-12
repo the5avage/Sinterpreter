@@ -55,6 +55,9 @@ struct Interpreter {
 
     func run() {
         while let node = source.front {
+            if case let Expression.Leaf(token) = node, token.asString == "exit" {
+                break
+            }
             print(evaluate(node))
             source.popFront()
         }

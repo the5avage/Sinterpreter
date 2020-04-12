@@ -3,7 +3,7 @@ extension CharStream {
         while let c = front {
             switch c {
             case "A" ... "z", "_":
-                return matchIdentifier()
+                return matchIdentifierOrKeyword()
             case "0" ... "9":
                 return matchNumber()
             case _ where isOperatorCharacter(c):
@@ -19,7 +19,7 @@ extension CharStream {
         return nil
     }
 
-    private func matchIdentifier() -> Token {
+    private func matchIdentifierOrKeyword() -> Token {
         let source = String(self.take(while: {
             switch $0 {
             case "A" ... "z", "_", "0" ... "9":
@@ -28,6 +28,12 @@ extension CharStream {
                 return false
             }
         }))
+        if keywords.contains(source) {
+            return Token(type: TokenType.Keyword,
+                            asString: source,
+                            numLine: actualLineNumber,
+                            numRow: actualRowNumber)
+        }
         return Token(type: TokenType.Identifier,
                         asString: source,
                         numLine: actualLineNumber,

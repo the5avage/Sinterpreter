@@ -3,6 +3,7 @@ enum TokenType {
     case Number
     case Operator
     case Delimiter
+    case Keyword
 }
 
 struct Token : CustomStringConvertible {
@@ -35,8 +36,8 @@ struct Token : CustomStringConvertible {
     func nud(tokens: TokenStream) -> Expression {
         switch self.type {
             case .Identifier, .Number:
-                return Expression.Leaf(self)
-            case .Operator:
+                return parseAtom(self, tokens)
+            case .Operator, .Keyword:
                 guard let nud = nudTable[self.asString] else {
                     fatalError("No prefix operator: \(self)")
                 }

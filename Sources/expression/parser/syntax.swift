@@ -1,4 +1,12 @@
-let nudTable: [String : (Token, TokenStream) -> Expression] = ["-" : nudPrefixOperator(30)]
+let nudTable: [String : (Token, TokenStream) -> Expression] = [
+    "-" : nudPrefixOperator(30),
+    "exit" : {
+        if $1.front!.type != TokenType.Delimiter {
+            fatalError("Expected newline after \($0)")
+        }
+        return parseAtom($0, $1)
+    }
+    ]
 
 let ledTable: [String : (Token, Expression, TokenStream) -> Expression] = [
     "=" : ledOperatorRight(),
@@ -7,7 +15,18 @@ let ledTable: [String : (Token, Expression, TokenStream) -> Expression] = [
     "*" : ledOperator(),
     "/" : ledOperator()]
 
-let leftBindingPower: [String: Int] = ["=" : 5, "+" : 10, "-" : 10, "*" : 20, "/" : 20]
+let leftBindingPower: [String : Int] = [
+    "=" : 5,
+    "+" : 10,
+    "-" : 10,
+    "*" : 20,
+    "/" : 20]
+
+let keywords: Set = ["exit"]
+
+func parseAtom(_ tok: Token, _ tokens: TokenStream) -> Expression {
+    return Expression.Leaf(tok)
+}
 
 func nudPrefixOperator(_ rbp: Int) -> (Token, TokenStream) -> Expression {
     return { Expression.Unary($0, parse(tokens: $1, rbp: rbp)!)}
