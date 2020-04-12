@@ -1,5 +1,5 @@
 let nudTable: [String : (Token, TokenStream) -> Expression] = [
-    "-" : nudPrefixOperator(30),
+    "-" : nudPrefixOperator(70),
     "exit" : {
         if $1.front!.type != TokenType.Delimiter {
             fatalError("Expected newline after \($0)")
@@ -7,21 +7,30 @@ let nudTable: [String : (Token, TokenStream) -> Expression] = [
         return parseAtom($0, $1)
     },
     "true" : parseAtom,
-    "false" : parseAtom]
+    "false" : parseAtom,
+    "!" : nudPrefixOperator(70)]
 
 let ledTable: [String : (Token, Expression, TokenStream) -> Expression] = [
     "=" : ledOperatorRight(),
     "+" : ledOperator(),
     "-" : ledOperator(),
     "*" : ledOperator(),
-    "/" : ledOperator()]
+    "/" : ledOperator(),
+    "==" : ledOperator(),
+    "!=" : ledOperator(),
+    "&&" : ledOperator(),
+    "||" : ledOperator()]
 
 let leftBindingPower: [String : Int] = [
-    "=" : 5,
-    "+" : 10,
-    "-" : 10,
-    "*" : 20,
-    "/" : 20]
+    "=" : 10,
+    "||" : 20,
+    "&&" : 30,
+    "==" : 40,
+    "!=" : 40,
+    "+" : 50,
+    "-" : 50,
+    "*" : 60,
+    "/" : 60]
 
 let keywords: Set = ["exit", "true", "false"]
 

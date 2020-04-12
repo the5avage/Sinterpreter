@@ -14,14 +14,20 @@ enum Type : CustomStringConvertible {
     }
 }
 
-let unaryOperatorAction: [String : (Expression) -> Type] = ["-" : unaryActionDouble({ -$0 })]
+let unaryOperatorAction: [String : (Expression) -> Type] = [
+    "-" : unaryActionDouble(-),
+    "!" : unaryActionBool(!)]
 
 let binaryOperatorAction: [String : (Expression, Expression) -> Type] = [
     "+" : binaryActionDouble(+),
     "-" : binaryActionDouble(-),
     "*" : binaryActionDouble(*),
     "/" : binaryActionDouble(/),
-    "=" : assignmentOperatorAction
+    "=" : assignmentOperatorAction,
+    "==" : binaryActionBool(==),
+    "!=" : binaryActionBool(!=),
+    "&&" : binaryActionBool({$0 && $1}),
+    "||" : binaryActionBool({$0 || $1})
 ]
 
 func unaryActionDouble(_ action: @escaping (Double) -> (Double)) -> (Expression) -> Type {
@@ -33,12 +39,31 @@ func unaryActionDouble(_ action: @escaping (Double) -> (Double)) -> (Expression)
     }
 }
 
+func unaryActionBool(_ action: @escaping (Bool) -> (Bool)) -> (Expression) -> Type {
+    return {
+        if case let Type.Bool(a) = evaluate($0) {
+            return Type.Bool(action(a))
+        }
+        fatalError("Expected argument of type bool: \($0)")
+    }
+}
+
+
 func binaryActionDouble(_ action: @escaping (Double, Double) -> (Double)) -> (Expression, Expression) -> Type {
     return {
         if case let Type.Double(a) = evaluate($0), case let Type.Double(b) = evaluate($1) {
             return Type.Double(action(a, b))
         }
         fatalError("Expected arguments of type double: \($0) \($1)")
+    }
+}
+
+func binaryActionBool(_ action: @escaping (Bool, Bool) -> (Bool)) -> (Expression, Expression) -> Type {
+    return {
+        if case let Type.Bool(a) = evaluate($0), case let Type.Bool(b) = evaluate($1) {
+            return Type.Bool(action(a, b))
+        }
+        fatalError("Expected arguments of type bool: \($0) \($1)")
     }
 }
 

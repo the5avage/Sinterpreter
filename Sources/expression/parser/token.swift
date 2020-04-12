@@ -18,11 +18,7 @@ struct Token : CustomStringConvertible {
         self.asString = asString
         self.numLine = numLine
         self.numRow = numRow
-        if type == .Operator {
-            guard let tmp = leftBindingPower[asString] else {
-                lbp = 0
-                fatalError("Unknown Operator: \(self)")
-            }
+        if type == .Operator, let tmp = leftBindingPower[asString] {
             lbp = tmp
         } else {
             lbp = 0

@@ -1,3 +1,5 @@
+let operatorCharacter: Set<Character> = ["+", "-", "*", "/", "=", "!", "|", "&"]
+
 extension CharStream {
     func matchToken() -> Token? {
         while let c = front {
@@ -80,5 +82,5 @@ extension CharStream {
 }
 
 func isOperatorCharacter(_ c: Character) -> Bool {
-    return "+-*/=".contains(c)
+    return operatorCharacter.contains(c)
 }
