@@ -8,7 +8,15 @@ let nudTable: [String : (Token, TokenStream) -> Expression] = [
     },
     "true" : parseAtom,
     "false" : parseAtom,
-    "!" : nudPrefixOperator(70)]
+    "!" : nudPrefixOperator(70),
+    "(" : {
+        let result = parse(tokens: $1, rbp: 0)!
+        if $1.front!.asString != ")" {
+            fatalError("Expected ) not: \($0)")
+        }
+        $1.popFront()
+        return result
+    }]
 
 let ledTable: [String : (Token, Expression, TokenStream) -> Expression] = [
     "=" : ledOperatorRight(),

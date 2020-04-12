@@ -6,5 +6,7 @@ y = x = x + 25.345
 y
 b = ! !true
 b || false && false
+(b || false) && false
+3 * (1 + 2)
 exit
 1+1
