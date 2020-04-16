@@ -32,6 +32,14 @@ let binaryOperatorAction: [String : (Expression, Expression) -> Type] = [
     ">" : binaryActionDoubleToBool({$0 > $1})
 ]
 
+// global variables
+var variables: [String : Type] = [:]
+
+// declared functions
+var unaryFunctions: [String : (Expression) -> Type] = ["addTwo" : unaryActionDouble({ $0 + 2})]
+
+var binaryFunctions: [String : (Expression, Expression) -> Type] = ["addTwo" : binaryActionDouble({ $0 + $1})]
+
 func unaryActionDouble(_ action: @escaping (Double) -> (Double)) -> (Expression) -> Type {
     return {
         if case let Type.Double(a) = evaluate($0) {
@@ -87,7 +95,6 @@ func assignmentOperatorAction(left: Expression, right: Expression) -> Type {
     fatalError("\(left) is not an L-Value")
 }
 
-var variables: [String : Type] = [:]
 
 func evaluate(_ node: Expression) -> Type {
     switch node {
@@ -111,15 +118,35 @@ func evaluate(_ node: Expression) -> Type {
                     fatalError("Token \(token) can't be a leaf node")
             }
         case .Unary(let token, let child):
-            guard let action = unaryOperatorAction[token.asString] else {
-                fatalError("No action for unary operator \(token)")
+            switch token.type {
+                case .Operator:
+                    guard let action = unaryOperatorAction[token.asString] else {
+                        fatalError("No action for unary operator \(token)")
+                    }
+                    return action(child)
+                case .Identifier:
+                    guard let action = unaryFunctions[token.asString] else {
+                        fatalError("Function \(token) was not defined")
+                    }
+                    return action(child)
+                default:
+                    fatalError("Expected operator or function \(token)")
             }
-        return action(child)
         case .Binary(let token, let child1, let child2):
-            guard let action = binaryOperatorAction[token.asString] else {
-                fatalError("No action for binary operator \(token)")
+            switch token.type {
+                case .Operator:
+                    guard let action = binaryOperatorAction[token.asString] else {
+                        fatalError("No action for binary operator \(token)")
+                    }
+                    return action(child1, child2)
+                case .Identifier:
+                    guard let action = binaryFunctions[token.asString] else {
+                        fatalError("Function \(token) was not defined")
+                    }
+                    return action(child1, child2)
+                default:
+                    fatalError("Expected operator or function \(token)")
             }
-            return action(child1, child2)
     }
 }
 

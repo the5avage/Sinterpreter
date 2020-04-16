@@ -29,9 +29,11 @@ let ledTable: [String : (Token, Expression, TokenStream) -> Expression] = [
     "&&" : ledOperator,
     "||" : ledOperator,
     ">" : ledOperator,
-    "<" : ledOperator]
+    "<" : ledOperator,
+    "(" : parseArgumentList]
 
 let leftBindingPower: [String : Int] = [
+    "," : 0,
     "=" : 10,
     "||" : 20,
     "&&" : 30,
@@ -42,7 +44,8 @@ let leftBindingPower: [String : Int] = [
     "+" : 50,
     "-" : 50,
     "*" : 60,
-    "/" : 60]
+    "/" : 60,
+    "(" : 70]
 
 let keywords: Set = ["exit", "true", "false"]
 
@@ -60,4 +63,27 @@ func ledOperator(_ tok: Token, _ exp: Expression, _ tokens: TokenStream) -> Expr
 
 func ledOperatorRight(_ tok: Token, _ exp: Expression, _ tokens: TokenStream) -> Expression {
     return Expression.Binary(tok, exp, parse(tokens: tokens, rbp: tok.lbp - 1)!)
+}
+
+func parseArgumentList(_ tok: Token, _ exp: Expression, _ tokens: TokenStream) -> Expression {
+    if tokens.front!.asString == ")" {
+        fatalError("Functions with no arguments are currently not supported: \(tok)")
+    }
+    guard case let Expression.Leaf(lhs) = exp, lhs.type == TokenType.Identifier else {
+        fatalError("Expected identifier at the left to function call operator: \(tok)")
+    }
+    let arg1 = parse(tokens: tokens, rbp: 0)!
+    if tokens.front!.asString == ")" {
+        tokens.popFront()
+        return Expression.Unary(lhs, arg1)
+    } else if tokens.front!.asString != "," {
+        fatalError("Expected , or ) while parsing argument list of function: \(tok)")
+    }
+    tokens.popFront()
+    let arg2 = parse(tokens: tokens, rbp: 0)!
+    if tokens.front!.asString != ")" {
+        fatalError("Function can have a maximum of two arguments: \(tok)")
+    }
+    tokens.popFront()
+    return Expression.Binary(lhs, arg1, arg2)
 }
