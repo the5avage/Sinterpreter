@@ -19,17 +19,17 @@ let nudTable: [String : (Token, TokenStream) -> Expression] = [
     }]
 
 let ledTable: [String : (Token, Expression, TokenStream) -> Expression] = [
-    "=" : ledOperatorRight(),
-    "+" : ledOperator(),
-    "-" : ledOperator(),
-    "*" : ledOperator(),
-    "/" : ledOperator(),
-    "==" : ledOperator(),
-    "!=" : ledOperator(),
-    "&&" : ledOperator(),
-    "||" : ledOperator(),
-    ">" : ledOperator(),
-    "<" : ledOperator()]
+    "=" : ledOperatorRight,
+    "+" : ledOperator,
+    "-" : ledOperator,
+    "*" : ledOperator,
+    "/" : ledOperator,
+    "==" : ledOperator,
+    "!=" : ledOperator,
+    "&&" : ledOperator,
+    "||" : ledOperator,
+    ">" : ledOperator,
+    "<" : ledOperator]
 
 let leftBindingPower: [String : Int] = [
     "=" : 10,
@@ -54,10 +54,10 @@ func nudPrefixOperator(_ rbp: Int) -> (Token, TokenStream) -> Expression {
     return { Expression.Unary($0, parse(tokens: $1, rbp: rbp)!)}
 }
 
-func ledOperator() -> (Token, Expression, TokenStream) -> Expression {
-    return { Expression.Binary($0, $1, parse(tokens: $2, rbp: $0.lbp)!) }
+func ledOperator(_ tok: Token, _ exp: Expression, _ tokens: TokenStream) -> Expression {
+    return Expression.Binary(tok, exp, parse(tokens: tokens, rbp: tok.lbp)!)
 }
 
-func ledOperatorRight() -> (Token, Expression, TokenStream) -> Expression {
-    return { Expression.Binary($0, $1, parse(tokens: $2, rbp: $0.lbp - 1)!) }
+func ledOperatorRight(_ tok: Token, _ exp: Expression, _ tokens: TokenStream) -> Expression {
+    return Expression.Binary(tok, exp, parse(tokens: tokens, rbp: tok.lbp - 1)!)
 }
