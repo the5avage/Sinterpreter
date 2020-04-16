@@ -27,7 +27,9 @@ let binaryOperatorAction: [String : (Expression, Expression) -> Type] = [
     "==" : binaryActionBool(==),
     "!=" : binaryActionBool(!=),
     "&&" : binaryActionBool({$0 && $1}),
-    "||" : binaryActionBool({$0 || $1})
+    "||" : binaryActionBool({$0 || $1}),
+    "<" : binaryActionDoubleToBool({$0 < $1}),
+    ">" : binaryActionDoubleToBool({$0 > $1})
 ]
 
 func unaryActionDouble(_ action: @escaping (Double) -> (Double)) -> (Expression) -> Type {
@@ -53,6 +55,15 @@ func binaryActionDouble(_ action: @escaping (Double, Double) -> (Double)) -> (Ex
     return {
         if case let Type.Double(a) = evaluate($0), case let Type.Double(b) = evaluate($1) {
             return Type.Double(action(a, b))
+        }
+        fatalError("Expected arguments of type double: \($0) \($1)")
+    }
+}
+
+func binaryActionDoubleToBool(_ action: @escaping (Double, Double) -> (Bool)) -> (Expression, Expression) -> Type {
+    return {
+        if case let Type.Double(a) = evaluate($0), case let Type.Double(b) = evaluate($1) {
+            return Type.Bool(action(a, b))
         }
         fatalError("Expected arguments of type double: \($0) \($1)")
     }

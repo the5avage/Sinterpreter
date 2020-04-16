@@ -27,7 +27,9 @@ let ledTable: [String : (Token, Expression, TokenStream) -> Expression] = [
     "==" : ledOperator(),
     "!=" : ledOperator(),
     "&&" : ledOperator(),
-    "||" : ledOperator()]
+    "||" : ledOperator(),
+    ">" : ledOperator(),
+    "<" : ledOperator()]
 
 let leftBindingPower: [String : Int] = [
     "=" : 10,
@@ -35,6 +37,8 @@ let leftBindingPower: [String : Int] = [
     "&&" : 30,
     "==" : 40,
     "!=" : 40,
+    "<" : 45,
+    ">" : 45,
     "+" : 50,
     "-" : 50,
     "*" : 60,

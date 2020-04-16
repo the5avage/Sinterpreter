@@ -1,4 +1,4 @@
-let operatorCharacter: Set<Character> = ["+", "-", "*", "/", "=", "!", "|", "&", "(", ")"]
+let operatorCharacter: Set<Character> = ["+", "-", "*", "/", "=", "!", "|", "&", "(", ")", "<", ">"]
 
 extension CharStream {
     func matchToken() -> Token? {
