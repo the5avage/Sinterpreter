@@ -148,16 +148,35 @@ func evaluate(_ node: Expression) -> Type {
                     fatalError("Expected operator or function \(token)")
             }
         case .Block(let token, let condition, let body):
-            guard case let Type.Bool(test) = evaluate(condition) else {
-                fatalError("Condition of if statement must evaluate to type bool.")
-            }
-            var result = Type.Bool(test)
-            if test {
-                for b in body {
-                    result = evaluate(b)
+            if token.asString == "if" {
+                guard case let Type.Bool(test) = evaluate(condition) else {
+                    fatalError("Condition of if statement must evaluate to type bool.")
                 }
+                var result = Type.Bool(test)
+                if test {
+                    for b in body {
+                        result = evaluate(b)
+                    }
+                }
+                return result
+            } else if token.asString == "while" {
+                guard case var Type.Bool(test) = evaluate(condition) else {
+                    fatalError("Condition of while statement must evaluate to type bool.")
+                }
+                var result = Type.Bool(test)
+                while test {
+                    for b in body {
+                        result = evaluate(b)
+                    }
+                    guard case let Type.Bool(test2) = evaluate(condition) else {
+                        fatalError("Condition of while statement must evaluate to type bool.")
+                    }
+                    test = test2
+                }
+                return result
+            } else {
+                fatalError("Expected while or if statement instead of \(token)")
             }
-            return result
     }
 }
 
