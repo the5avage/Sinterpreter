@@ -147,6 +147,17 @@ func evaluate(_ node: Expression) -> Type {
                 default:
                     fatalError("Expected operator or function \(token)")
             }
+        case .Block(let token, let condition, let body):
+            guard case let Type.Bool(test) = evaluate(condition) else {
+                fatalError("Condition of if statement must evaluate to type bool.")
+            }
+            var result = Type.Bool(test)
+            if test {
+                for b in body {
+                    result = evaluate(b)
+                }
+            }
+            return result
     }
 }
 

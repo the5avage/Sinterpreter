@@ -16,6 +16,15 @@ let nudTable: [String : (Token, TokenStream) -> Expression] = [
         }
         $1.popFront()
         return result
+    },
+    "if" : {
+        let condition = parseStatement(tokens: $1)!
+        var body: [Expression] = []
+        while $1.front!.asString != "end" {
+            body.append(parseStatement(tokens: $1)!)
+        }
+        $1.popFront() // remove "end" token
+        return Expression.Block($0, condition, body)
     }]
 
 let ledTable: [String : (Token, Expression, TokenStream) -> Expression] = [
@@ -47,7 +56,7 @@ let leftBindingPower: [String : Int] = [
     "/" : 60,
     "(" : 70]
 
-let keywords: Set = ["exit", "true", "false"]
+let keywords: Set = ["exit", "true", "false", "if", "end"]
 
 func parseAtom(_ tok: Token, _ tokens: TokenStream) -> Expression {
     return Expression.Leaf(tok)

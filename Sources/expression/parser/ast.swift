@@ -2,6 +2,7 @@ enum Expression : CustomStringConvertible {
     case Leaf(Token)
     indirect case Unary(Token, Expression)
     indirect case Binary(Token, Expression, Expression)
+    indirect case Block(Token, Expression, [Expression])
 
     var description: String
     {
@@ -12,6 +13,12 @@ enum Expression : CustomStringConvertible {
                 return "(\(token.asString) \(child.description))"
             case .Binary(let token, let child1, let child2):
                 return "(\(token.asString) \(child1.description) \(child2.description))"
+            case .Block(let token, let condition, let body):
+                var result = "(\(token.asString) \(condition.description) ("
+                for b in body {
+                    result += b.description
+                }
+                return result + ")"
         }
     }
 }
