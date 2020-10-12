@@ -1,15 +1,19 @@
 import Range
 
-enum Type : CustomStringConvertible {
-    case Double(Double)
-    case Bool(Bool)
+struct Interpreter {
+    let source: ExpressionStream
 
-    var description: String {
-        switch self {
-            case .Double(let d):
-                return String(d)
-            case .Bool(let b):
-                return String(b)
+    init(source: ExpressionStream) {
+        self.source = source
+    }
+
+    func run() {
+        while let node = source.front {
+            if case let Expression.Leaf(token) = node, token.asString == "exit" {
+                break
+            }
+            print(evaluate(node))
+            source.popFront()
         }
     }
 }
@@ -95,105 +99,140 @@ func assignmentOperatorAction(left: Expression, right: Expression) -> Type {
     fatalError("\(left) is not an L-Value")
 }
 
-
 func evaluate(_ node: Expression) -> Type {
     switch node {
         case .Leaf(let token):
-            switch token.type {
-                case .Number:
-                    return Type.Double(Double(token.asString)!)
-                case .Identifier:
-                    guard let result = variables[token.asString] else {
-                        fatalError("Variable \(token.asString) was not defined")
-                    }
-                    return result
-                case .Keyword:
-                    if token.asString == "true" {
-                        return Type.Bool(true)
-                    } else if token.asString == "false" {
-                        return Type.Bool(false)
-                    }
-                    fallthrough
-                default:
-                    fatalError("Token \(token) can't be a leaf node")
-            }
+            return evaluateLeaf(token)
         case .Unary(let token, let child):
-            switch token.type {
-                case .Operator:
-                    guard let action = unaryOperatorAction[token.asString] else {
-                        fatalError("No action for unary operator \(token)")
-                    }
-                    return action(child)
-                case .Identifier:
-                    guard let action = unaryFunctions[token.asString] else {
-                        fatalError("Function \(token) was not defined")
-                    }
-                    return action(child)
-                default:
-                    fatalError("Expected operator or function \(token)")
-            }
+            return evaluateUnary(token, child)
         case .Binary(let token, let child1, let child2):
-            switch token.type {
-                case .Operator:
-                    guard let action = binaryOperatorAction[token.asString] else {
-                        fatalError("No action for binary operator \(token)")
-                    }
-                    return action(child1, child2)
-                case .Identifier:
-                    guard let action = binaryFunctions[token.asString] else {
-                        fatalError("Function \(token) was not defined")
-                    }
-                    return action(child1, child2)
-                default:
-                    fatalError("Expected operator or function \(token)")
-            }
+            return evaluateBinary(token, child1, child2)
         case .Block(let token, let condition, let body):
-            if token.asString == "if" {
-                guard case let Type.Bool(test) = evaluate(condition) else {
-                    fatalError("Condition of if statement must evaluate to type bool.")
-                }
-                var result = Type.Bool(test)
-                if test {
-                    for b in body {
-                        result = evaluate(b)
-                    }
-                }
-                return result
-            } else if token.asString == "while" {
-                guard case var Type.Bool(test) = evaluate(condition) else {
-                    fatalError("Condition of while statement must evaluate to type bool.")
-                }
-                var result = Type.Bool(test)
-                while test {
-                    for b in body {
-                        result = evaluate(b)
-                    }
-                    guard case let Type.Bool(test2) = evaluate(condition) else {
-                        fatalError("Condition of while statement must evaluate to type bool.")
-                    }
-                    test = test2
-                }
-                return result
-            } else {
-                fatalError("Expected while or if statement instead of \(token)")
-            }
+            return evaluateBlock(token, condition, body)
     }
 }
 
-struct Interpreter {
-    let source: ExpressionStream
-
-    init(source: ExpressionStream) {
-        self.source = source
-    }
-
-    func run() {
-        while let node = source.front {
-            if case let Expression.Leaf(token) = node, token.asString == "exit" {
-                break
+func evaluateLeaf(_ token: Token) -> Type {
+    switch token.type {
+        case .Number:
+            return Type.Double(Double(token.asString)!)
+        case .Identifier:
+            guard let result = variables[token.asString] else {
+                fatalError("Variable \(token.asString) was not defined")
             }
-            print(evaluate(node))
-            source.popFront()
+            return result
+        case .Keyword:
+            if token.asString == "true" {
+                return Type.Bool(true)
+            } else if token.asString == "false" {
+                return Type.Bool(false)
+            }
+            fallthrough
+        default:
+            fatalError("Token \(token) can't be a leaf node")
+    }
+}
+
+func evaluateUnary(_ token: Token, _ child: Expression) -> Type {
+    switch token.type {
+        case .Operator:
+            return evaluateUnaryOperator(token, child)
+        case .Identifier:
+            return evaluateIdentifier(token, child)
+        default:
+            fatalError("Expected operator or function \(token)")
+    }
+}
+
+func evaluateBinary(_ token: Token, _ child1: Expression, _ child2: Expression) -> Type {
+    switch token.type {
+        case .Operator:
+            return evaluateBinaryOperator(token, child1, child2)
+        case .Identifier:
+            return evaluateBinaryFunc(token, child1, child2)
+        default:
+            fatalError("Expected operator or function \(token)")
+    }
+}
+
+func evaluateBlock(_ token: Token, _ condition: Expression, _ body: [Expression]) -> Type {
+    if token.asString == "if" {
+        return evaluateIf(token, condition, body)
+    } else if token.asString == "while" {
+        return evaluateWhile(token, condition, body)
+    } else {
+        fatalError("Expected while or if statement instead of \(token)")
+    }
+}
+
+func evaluateUnaryOperator(_ token: Token, _ child: Expression) -> Type {
+    guard let action = unaryOperatorAction[token.asString] else {
+        fatalError("No action for unary operator \(token)")
+    }
+    return action(child)
+}
+
+func evaluateIdentifier(_ token: Token, _ child: Expression) -> Type {
+    guard let action = unaryFunctions[token.asString] else {
+        fatalError("Function \(token) was not defined")
+    }
+    return action(child)
+}
+
+func evaluateBinaryOperator(_ token: Token, _ child1: Expression, _ child2: Expression) -> Type {
+    guard let action = binaryOperatorAction[token.asString] else {
+        fatalError("No action for binary operator \(token)")
+    }
+    return action(child1, child2)
+}
+
+func evaluateBinaryFunc(_ token: Token, _ child1: Expression, _ child2: Expression) -> Type {
+    guard let action = binaryFunctions[token.asString] else {
+        fatalError("Function \(token) was not defined")
+    }
+    return action(child1, child2)
+}
+
+func evaluateIf(_ token: Token, _ condition: Expression, _ body: [Expression]) -> Type {
+    guard case let Type.Bool(test) = evaluate(condition) else {
+        fatalError("Condition of if statement must evaluate to type bool.")
+    }
+    var result = Type.Bool(test)
+    if test {
+        for b in body {
+            result = evaluate(b)
+        }
+    }
+    return result
+}
+
+func evaluateWhile(_ token: Token, _ condition: Expression, _ body: [Expression]) -> Type {
+    guard case var Type.Bool(test) = evaluate(condition) else {
+        fatalError("Condition of while statement must evaluate to type bool.")
+    }
+    var result = Type.Bool(test)
+    while test {
+        for b in body {
+            result = evaluate(b)
+        }
+        guard case let Type.Bool(test2) = evaluate(condition) else {
+            fatalError("Condition of while statement must evaluate to type bool.")
+        }
+        test = test2
+    }
+    return result
+}
+
+enum Type : CustomStringConvertible {
+    case Double(Double)
+    case Bool(Bool)
+
+    var description: String {
+        switch self {
+            case .Double(let d):
+                return String(d)
+            case .Bool(let b):
+                return String(b)
         }
     }
 }
