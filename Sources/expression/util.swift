@@ -44,3 +44,8 @@ func readFile(atPath path: String, encoding: String.Encoding = .utf8 ) -> String
         else { return nil }
     return String(data: raw, encoding: .ascii)
 }
+
+// now we can throw strings as error messages
+extension String: Error {
+    public var errorDescription: String? { return self }
+}

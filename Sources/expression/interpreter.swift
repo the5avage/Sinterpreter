@@ -12,17 +12,21 @@ struct Interpreter {
             if case let Expression.Leaf(token) = node, token.asString == "exit" {
                 break
             }
-            print(evaluate(node))
+            do {
+            print(try evaluate(node))
+            } catch {
+                print("Error: \(error)")
+            }
             source.popFront()
         }
     }
 }
 
-let unaryOperatorAction: [String : (Expression) -> Type] = [
+let unaryOperatorAction: [String : (Expression) throws -> Type] = [
     "-" : unaryActionDouble(-),
     "!" : unaryActionBool(!)]
 
-let binaryOperatorAction: [String : (Expression, Expression) -> Type] = [
+let binaryOperatorAction: [String : (Expression, Expression) throws -> Type] = [
     "+" : binaryActionDouble(+),
     "-" : binaryActionDouble(-),
     "*" : binaryActionDouble(*),
@@ -40,85 +44,85 @@ let binaryOperatorAction: [String : (Expression, Expression) -> Type] = [
 var variables: [String : Type] = [:]
 
 // declared functions
-var unaryFunctions: [String : (Expression) -> Type] = ["addTwo" : unaryActionDouble({ $0 + 2})]
+var unaryFunctions: [String : (Expression) throws -> Type] = ["addTwo" : unaryActionDouble({ $0 + 2})]
 
-var binaryFunctions: [String : (Expression, Expression) -> Type] = ["addTwo" : binaryActionDouble({ $0 + $1})]
+var binaryFunctions: [String : (Expression, Expression) throws -> Type] = ["addTwo" : binaryActionDouble({ $0 + $1})]
 
-func unaryActionDouble(_ action: @escaping (Double) -> (Double)) -> (Expression) -> Type {
+func unaryActionDouble(_ action: @escaping (Double) -> (Double)) -> (Expression) throws -> Type {
     return {
-        if case let Type.Double(a) = evaluate($0) {
+        if case let Type.Double(a) = try evaluate($0) {
             return Type.Double(action(a))
         }
-        fatalError("Expected argument of type double: \($0)")
+        throw "Expected argument of type double: \($0)"
     }
 }
 
-func unaryActionBool(_ action: @escaping (Bool) -> (Bool)) -> (Expression) -> Type {
+func unaryActionBool(_ action: @escaping (Bool) -> (Bool)) -> (Expression) throws -> Type {
     return {
-        if case let Type.Bool(a) = evaluate($0) {
+        if case let Type.Bool(a) = try evaluate($0) {
             return Type.Bool(action(a))
         }
-        fatalError("Expected argument of type bool: \($0)")
+        throw "Expected argument of type bool: \($0)"
     }
 }
 
 
-func binaryActionDouble(_ action: @escaping (Double, Double) -> (Double)) -> (Expression, Expression) -> Type {
+func binaryActionDouble(_ action: @escaping (Double, Double) -> (Double)) -> (Expression, Expression) throws -> Type {
     return {
-        if case let Type.Double(a) = evaluate($0), case let Type.Double(b) = evaluate($1) {
+        if case let Type.Double(a) = try evaluate($0), case let Type.Double(b) = try evaluate($1) {
             return Type.Double(action(a, b))
         }
-        fatalError("Expected arguments of type double: \($0) \($1)")
+        throw "Expected arguments of type double: \($0) \($1)"
     }
 }
 
-func binaryActionDoubleToBool(_ action: @escaping (Double, Double) -> (Bool)) -> (Expression, Expression) -> Type {
+func binaryActionDoubleToBool(_ action: @escaping (Double, Double) -> (Bool)) -> (Expression, Expression) throws -> Type {
     return {
-        if case let Type.Double(a) = evaluate($0), case let Type.Double(b) = evaluate($1) {
+        if case let Type.Double(a) = try evaluate($0), case let Type.Double(b) = try evaluate($1) {
             return Type.Bool(action(a, b))
         }
-        fatalError("Expected arguments of type double: \($0) \($1)")
+        throw "Expected arguments of type double: \($0) \($1)"
     }
 }
 
-func binaryActionBool(_ action: @escaping (Bool, Bool) -> (Bool)) -> (Expression, Expression) -> Type {
+func binaryActionBool(_ action: @escaping (Bool, Bool) -> (Bool)) -> (Expression, Expression) throws -> Type {
     return {
-        if case let Type.Bool(a) = evaluate($0), case let Type.Bool(b) = evaluate($1) {
+        if case let Type.Bool(a) = try evaluate($0), case let Type.Bool(b) = try evaluate($1) {
             return Type.Bool(action(a, b))
         }
-        fatalError("Expected arguments of type bool: \($0) \($1)")
+        throw "Expected arguments of type bool: \($0) \($1)"
     }
 }
 
-func assignmentOperatorAction(left: Expression, right: Expression) -> Type {
+func assignmentOperatorAction(left: Expression, right: Expression) throws -> Type {
     if case .Leaf(let token) = left, token.type == .Identifier {
-        let result = evaluate(right)
+        let result = try evaluate(right)
         variables.updateValue(result, forKey: token.asString)
         return result
     }
-    fatalError("\(left) is not an L-Value")
+    throw "\(left) is not an L-Value"
 }
 
-func evaluate(_ node: Expression) -> Type {
+func evaluate(_ node: Expression) throws -> Type {
     switch node {
         case .Leaf(let token):
-            return evaluateLeaf(token)
+            return try evaluateLeaf(token)
         case .Unary(let token, let child):
-            return evaluateUnary(token, child)
+            return try evaluateUnary(token, child)
         case .Binary(let token, let child1, let child2):
-            return evaluateBinary(token, child1, child2)
+            return try evaluateBinary(token, child1, child2)
         case .Block(let token, let condition, let body):
-            return evaluateBlock(token, condition, body)
+            return try evaluateBlock(token, condition, body)
     }
 }
 
-func evaluateLeaf(_ token: Token) -> Type {
+func evaluateLeaf(_ token: Token) throws  -> Type {
     switch token.type {
         case .Number:
             return Type.Double(Double(token.asString)!)
         case .Identifier:
             guard let result = variables[token.asString] else {
-                fatalError("Variable \(token.asString) was not defined")
+                throw "Variable \(token.asString) was not defined"
             }
             return result
         case .Keyword:
@@ -129,94 +133,94 @@ func evaluateLeaf(_ token: Token) -> Type {
             }
             fallthrough
         default:
-            fatalError("Token \(token) can't be a leaf node")
+            throw "Token \(token) can't be a leaf node"
     }
 }
 
-func evaluateUnary(_ token: Token, _ child: Expression) -> Type {
+func evaluateUnary(_ token: Token, _ child: Expression) throws -> Type {
     switch token.type {
         case .Operator:
-            return evaluateUnaryOperator(token, child)
+            return try evaluateUnaryOperator(token, child)
         case .Identifier:
-            return evaluateIdentifier(token, child)
+            return try evaluateIdentifier(token, child)
         default:
-            fatalError("Expected operator or function \(token)")
+            throw "Expected operator or function \(token)"
     }
 }
 
-func evaluateBinary(_ token: Token, _ child1: Expression, _ child2: Expression) -> Type {
+func evaluateBinary(_ token: Token, _ child1: Expression, _ child2: Expression) throws -> Type {
     switch token.type {
         case .Operator:
-            return evaluateBinaryOperator(token, child1, child2)
+            return try evaluateBinaryOperator(token, child1, child2)
         case .Identifier:
-            return evaluateBinaryFunc(token, child1, child2)
+            return try evaluateBinaryFunc(token, child1, child2)
         default:
-            fatalError("Expected operator or function \(token)")
+            throw "Expected operator or function \(token)"
     }
 }
 
-func evaluateBlock(_ token: Token, _ condition: Expression, _ body: [Expression]) -> Type {
+func evaluateBlock(_ token: Token, _ condition: Expression, _ body: [Expression]) throws -> Type {
     if token.asString == "if" {
-        return evaluateIf(token, condition, body)
+        return try evaluateIf(token, condition, body)
     } else if token.asString == "while" {
-        return evaluateWhile(token, condition, body)
+        return try evaluateWhile(token, condition, body)
     } else {
-        fatalError("Expected while or if statement instead of \(token)")
+        throw "Expected while or if statement instead of \(token)"
     }
 }
 
-func evaluateUnaryOperator(_ token: Token, _ child: Expression) -> Type {
+func evaluateUnaryOperator(_ token: Token, _ child: Expression) throws -> Type {
     guard let action = unaryOperatorAction[token.asString] else {
-        fatalError("No action for unary operator \(token)")
+        throw "No action for unary operator \(token)"
     }
-    return action(child)
+    return try action(child)
 }
 
-func evaluateIdentifier(_ token: Token, _ child: Expression) -> Type {
+func evaluateIdentifier(_ token: Token, _ child: Expression) throws -> Type {
     guard let action = unaryFunctions[token.asString] else {
-        fatalError("Function \(token) was not defined")
+        throw "Function \(token) was not defined"
     }
-    return action(child)
+    return try action(child)
 }
 
-func evaluateBinaryOperator(_ token: Token, _ child1: Expression, _ child2: Expression) -> Type {
+func evaluateBinaryOperator(_ token: Token, _ child1: Expression, _ child2: Expression) throws -> Type {
     guard let action = binaryOperatorAction[token.asString] else {
-        fatalError("No action for binary operator \(token)")
+        throw "No action for binary operator \(token)"
     }
-    return action(child1, child2)
+    return try action(child1, child2)
 }
 
-func evaluateBinaryFunc(_ token: Token, _ child1: Expression, _ child2: Expression) -> Type {
+func evaluateBinaryFunc(_ token: Token, _ child1: Expression, _ child2: Expression) throws -> Type {
     guard let action = binaryFunctions[token.asString] else {
-        fatalError("Function \(token) was not defined")
+        throw "Function \(token) was not defined"
     }
-    return action(child1, child2)
+    return try action(child1, child2)
 }
 
-func evaluateIf(_ token: Token, _ condition: Expression, _ body: [Expression]) -> Type {
-    guard case let Type.Bool(test) = evaluate(condition) else {
-        fatalError("Condition of if statement must evaluate to type bool.")
+func evaluateIf(_ token: Token, _ condition: Expression, _ body: [Expression]) throws -> Type {
+    guard case let Type.Bool(test) = try evaluate(condition) else {
+        throw "Condition of if statement must evaluate to type bool."
     }
     var result = Type.Bool(test)
     if test {
         for b in body {
-            result = evaluate(b)
+            result = try evaluate(b)
         }
     }
     return result
 }
 
-func evaluateWhile(_ token: Token, _ condition: Expression, _ body: [Expression]) -> Type {
-    guard case var Type.Bool(test) = evaluate(condition) else {
-        fatalError("Condition of while statement must evaluate to type bool.")
+func evaluateWhile(_ token: Token, _ condition: Expression, _ body: [Expression]) throws -> Type {
+    guard case var Type.Bool(test) = try evaluate(condition) else {
+        throw "Condition of while statement must evaluate to type bool."
     }
     var result = Type.Bool(test)
     while test {
         for b in body {
-            result = evaluate(b)
+            result = try evaluate(b)
         }
-        guard case let Type.Bool(test2) = evaluate(condition) else {
-            fatalError("Condition of while statement must evaluate to type bool.")
+        guard case let Type.Bool(test2) = try evaluate(condition) else {
+            throw "Condition of while statement must evaluate to type bool."
         }
         test = test2
     }
