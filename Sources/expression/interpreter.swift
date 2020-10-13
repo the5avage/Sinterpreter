@@ -13,7 +13,7 @@ struct Interpreter {
                 break
             }
             do {
-            print(try evaluate(node))
+                print(try evaluate(node))
             } catch {
                 print("Error: \(error)")
             }
