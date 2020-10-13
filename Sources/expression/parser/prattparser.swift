@@ -48,14 +48,7 @@ func parseStatement(tokens: TokenStream) -> Expression? {
     return result
 }
 
-// When an error occurs while parsing an expression we drop all tokens of that line
-private func dropLine(_ tokens: TokenStream) {
-        repeat {
-            tokens.popFront()
-        } while tokens.front != nil && tokens.front!.type != .Delimiter
-        tokens.popFront()
-}
-
+// This is Pratt's Algorithm
 func parse(tokens: TokenStream, rbp: Int) throws -> Expression?
 {
     guard var left = try tokens.next()?.nud(tokens: tokens) else {
@@ -86,4 +79,12 @@ struct Tree : CustomStringConvertible
         }
         return result
     }
+}
+
+// When an error occurs while parsing an expression we drop all tokens of that line
+private func dropLine(_ tokens: TokenStream) {
+        repeat {
+            tokens.popFront()
+        } while tokens.front != nil && tokens.front!.type != .Delimiter
+        tokens.popFront()
 }
