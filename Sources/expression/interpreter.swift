@@ -113,6 +113,8 @@ func evaluate(_ node: Expression) throws -> Type {
             return try evaluateBinary(token, child1, child2)
         case .Block(let token, let condition, let body):
             return try evaluateBlock(token, condition, body)
+        case .Invalid(let message):
+            throw message
     }
 }
 

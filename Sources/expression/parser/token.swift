@@ -4,6 +4,7 @@ enum TokenType {
     case Operator
     case Delimiter
     case Keyword
+    case InvalidToken
 }
 
 struct Token : CustomStringConvertible {
@@ -20,8 +21,10 @@ struct Token : CustomStringConvertible {
         self.numRow = numRow
         if type == .Operator, let tmp = leftBindingPower[asString] {
             lbp = tmp
-        } else {
+        } else if type == .Identifier || type == .Number || type == .Keyword || type == .Delimiter {
             lbp = 0
+        } else {
+            lbp = Int.max
         }
     }
 
@@ -29,29 +32,33 @@ struct Token : CustomStringConvertible {
         return "\(type): \"\(asString)\" Line: \(numLine) Row: \(numRow)"
     }
 
-    func nud(tokens: TokenStream) -> Expression {
+    func nud(tokens: TokenStream) throws -> Expression {
         switch self.type {
             case .Identifier, .Number:
                 return parseAtom(self, tokens)
             case .Operator, .Keyword:
                 guard let nud = nudTable[self.asString] else {
-                    fatalError("No prefix operator: \(self)")
+                    throw "Unknown prefix operator: \(self)"
                 }
-                return nud(self, tokens)
+                return try nud(self, tokens)
+            case .InvalidToken:
+                throw "\(self)"
             default:
-                fatalError("Nud not implemented: \(self)")
+                fatalError("This should never happen.")
         }
     }
 
-    func led(left: Expression, tokens: TokenStream) -> Expression {
+    func led(left: Expression, tokens: TokenStream) throws -> Expression {
         switch self.type {
             case .Operator:
                 guard let led = ledTable[self.asString] else {
-                    fatalError("No infix operator: \(self)")
+                    throw "Unknown infix operator: \(self)"
                 }
-                return led(self, left, tokens)
+                return try led(self, left, tokens)
+            case .InvalidToken:
+                throw "\(self)"
             default:
-                fatalError("Led not implemented. \(self)")
+                throw "Unknown infix operator: \(self)"
         }
     }
 }

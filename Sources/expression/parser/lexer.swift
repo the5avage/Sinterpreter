@@ -15,7 +15,8 @@ extension CharStream {
             case " ", "\t":
                 popFront()
             default:
-                fatalError("Unexpected character \"\(c)\" Line: \(actualLineNumber) Row: \(actualRowNumber)")
+                popFront()
+                return Token(type: .InvalidToken, asString: "Unexpected character \"\(c)\"", numLine: actualLineNumber, numRow: actualRowNumber)
             }
         }
         return nil

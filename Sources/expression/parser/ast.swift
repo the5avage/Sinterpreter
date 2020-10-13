@@ -3,6 +3,7 @@ enum Expression : CustomStringConvertible {
     indirect case Unary(Token, Expression)
     indirect case Binary(Token, Expression, Expression)
     indirect case Block(Token, Expression, [Expression])
+    case Invalid(String)
 
     var description: String
     {
@@ -19,28 +20,51 @@ enum Expression : CustomStringConvertible {
                     result += b.description
                 }
                 return result + ")"
+            case .Invalid(let message):
+                return message
         }
     }
 }
 
 func parseStatement(tokens: TokenStream) -> Expression? {
-    let result = parse(tokens: tokens, rbp: 0)
-    if let tok = tokens.front, tok.type != .Delimiter {
-        fatalError("Expected newline after statement: \(tokens.front!)")
-    } else {
-        tokens.popFront()
+    var result: Expression?
+    do {
+        result = try parse(tokens: tokens, rbp: 0)
+    } catch {
+        dropLine(tokens)
+        return Expression.Invalid("\(error)")
     }
+
+    if let tok = tokens.front, tok.type == .Delimiter {
+        tokens.popFront() // drop the end of line token (Delimiter)
+    }
+    // if parse returns and the last token ist not end of line the result is invalid
+    // this happens in a line like "2+2 1+3"
+    else {
+        result = Expression.Invalid("Expected newline after statement, but token is: \(tokens.front!)")
+        dropLine(tokens)
+    }
+
     return result
 }
 
-func parse(tokens: TokenStream, rbp: Int) -> Expression?
+// When an error occurs while parsing an expression we drop all tokens of that line
+private func dropLine(_ tokens: TokenStream) {
+        repeat {
+            tokens.popFront()
+        } while tokens.front != nil && tokens.front!.type != .Delimiter
+        tokens.popFront()
+}
+
+func parse(tokens: TokenStream, rbp: Int) throws -> Expression?
 {
-    guard var left = tokens.next()?.nud(tokens: tokens) else {
+    guard var left = try tokens.next()?.nud(tokens: tokens) else {
         return nil
     }
+
     while let tok = tokens.front, rbp < tok.lbp {
         tokens.popFront()
-        left = tok.led(left: left, tokens: tokens)
+        left = try tok.led(left: left, tokens: tokens)
     }
     return left
 }
