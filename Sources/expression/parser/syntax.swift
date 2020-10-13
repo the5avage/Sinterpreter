@@ -35,6 +35,7 @@ let ledTable: [String : (Token, Expression, TokenStream) throws -> Expression] =
     "(" : parseArgumentList]
 
 let leftBindingPower: [String : Int] = [
+    ")" : -1, // never try to parse ) as infix operator
     "," : 0,
     "=" : 10,
     "||" : 20,
