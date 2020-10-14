@@ -28,6 +28,7 @@ enum Expression : CustomStringConvertible {
 
 func parseStatement(tokens: TokenStream) -> Expression? {
     var result: Expression?
+    dropEmptyLines(tokens)
     do {
         result = try parse(tokens: tokens, rbp: 0)
     } catch {
@@ -83,8 +84,14 @@ struct Tree : CustomStringConvertible
 
 // When an error occurs while parsing an expression we drop all tokens of that line
 private func dropLine(_ tokens: TokenStream) {
-        repeat {
-            tokens.popFront()
-        } while tokens.front != nil && tokens.front!.type != .Delimiter
+    repeat {
         tokens.popFront()
+    } while tokens.front != nil && tokens.front!.type != .Delimiter
+    tokens.popFront()
+}
+
+private func dropEmptyLines(_ tokens: TokenStream) {
+    while tokens.front != nil && tokens.front!.type == .Delimiter {
+        tokens.popFront()
+    }
 }

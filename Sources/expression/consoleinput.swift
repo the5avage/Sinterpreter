@@ -6,13 +6,11 @@ class ConsoleStream : ForwardRange {
 
     var front: Character? {
         if buffer.isEmpty {
-            repeat {
-                print("--> ", terminator: "")
-                guard let newBuffer = readLine(strippingNewline: false) else {
-                    return nil
-                }
-                buffer = newBuffer[...]
-            } while buffer == "\n"
+            print("--> ", terminator: "")
+            guard let newBuffer = readLine(strippingNewline: false) else {
+                return nil
+            }
+            buffer = newBuffer[...]
         }
         return buffer.first
     }

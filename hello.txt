@@ -22,10 +22,12 @@ end
 test
 x = 4
 factorial = 1
+
 while x > 1
     factorial = factorial * x
     x = x - 1
 end
+
 factorial
 exit
 1+1
