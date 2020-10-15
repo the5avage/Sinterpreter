@@ -1,3 +1,17 @@
+let keywords: Set = ["exit", "true", "false", "if", "end", "while", "def"]
+
+/*
+All combinations of this chars are valid operators. "!=" is an operator.
+"=*+/" is also parsed as ONE operator as long as there are no spaces in between.
+This lets us define arbitrary operators.
+To define a valid operator we to have to specify a "leftBindingPower" and the
+functions "nud" and "led".
+*/
+let operatorCharacter: Set<Character> = ["+", "-", "*", "/", "=", "!", "|", "&", "(", "<", ">"]
+
+// these operators are parsed seperatly without needing spaces in between
+let specialOperators: Set<Character> = [",", ")"]
+
 let nudTable: [String : (Token, TokenStream) throws -> Expression] = [
     "-" : nudPrefixOperator(70),
     "exit" : {
@@ -36,8 +50,8 @@ let ledTable: [String : (Token, Expression, TokenStream) throws -> Expression] =
     "(" : parseFunctionCall]
 
 let leftBindingPower: [String : Int] = [
-    ")" : -1, // never try to parse ) and , as infix operator
-    "," : -1,
+    ")" : 0,
+    "," : 0,
     "=" : 10,
     "||" : 20,
     "&&" : 30,
@@ -50,8 +64,6 @@ let leftBindingPower: [String : Int] = [
     "*" : 60,
     "/" : 60,
     "(" : 70]
-
-let keywords: Set = ["exit", "true", "false", "if", "end", "while", "def"]
 
 func parseAtom(_ tok: Token, _ tokens: TokenStream) -> Expression {
     return Expression.Leaf(tok)

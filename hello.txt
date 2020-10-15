@@ -52,6 +52,9 @@ end
 
 doSomething(2, 2)
 
+doSomething(factorial(4) , factorial(3) )
+
+doSomething(factorial(4), factorial(3))
 exit
 1+1
 

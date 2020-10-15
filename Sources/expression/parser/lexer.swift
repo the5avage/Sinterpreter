@@ -1,5 +1,3 @@
-let operatorCharacter: Set<Character> = ["+", "-", "*", "/", "=", "!", "|", "&", "(", ")", "<", ">", ","]
-
 extension CharStream {
     func matchToken() -> Token? {
         while let c = front {
@@ -14,6 +12,9 @@ extension CharStream {
                 return matchNewline()
             case " ", "\t":
                 popFront()
+            case _ where specialOperators.contains(c):
+                popFront()
+                return Token(type: .Operator, asString: String(c), numLine: actualLineNumber, numRow: actualRowNumber)
             default:
                 popFront()
                 return Token(type: .InvalidToken, asString: "Unexpected character \"\(c)\"", numLine: actualLineNumber, numRow: actualRowNumber)
