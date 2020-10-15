@@ -22,6 +22,20 @@ struct Interpreter {
     }
 }
 
+enum Type : CustomStringConvertible {
+    case Double(Double)
+    case Bool(Bool)
+
+    var description: String {
+        switch self {
+            case .Double(let d):
+                return String(d)
+            case .Bool(let b):
+                return String(b)
+        }
+    }
+}
+
 let unaryOperatorAction: [String : (Expression) throws -> Type] = [
     "-" : unaryActionDouble(-),
     "!" : unaryActionBool(!)]
@@ -41,7 +55,60 @@ let binaryOperatorAction: [String : (Expression, Expression) throws -> Type] = [
 ]
 
 // global variables
-var variables: [String : Type] = [:]
+//var variables: [String : Type] = [:]
+
+typealias Scope = [String : Type]
+
+struct Stack {
+    private var stack: [Scope] = [[:]]
+
+    mutating func push(_ a: Scope) {
+        stack.append(a)
+    }
+
+    mutating func pop() {
+        stack.removeLast()
+    }
+
+    func getValue(_ name: String) throws -> Type {
+        for scope in stack.lazy.reversed() {
+            guard let found = scope[name] else {
+                continue
+            }
+            return found
+        }
+        throw "Unknown variable \"\(name)\""
+    }
+
+    mutating func setValue(_ name: String, _ value: Type) {
+        stack[stack.count - 1][name] = value
+    }
+}
+
+private var stack = Stack()
+
+private struct FunctionKey : Hashable {
+    var name: String
+    var arity: Int
+}
+
+private struct FunctionObject {
+    var paramNames: [String]
+    var fun: () throws -> Type
+
+    func call(_ param: [Type]) throws -> Type {
+        var stackFrame: Scope = [:]
+        for i in 0 ..< param.count {
+            stackFrame[paramNames[i]] = param[i]
+        }
+        stack.push(stackFrame)
+        let result = try fun()
+        stack.pop()
+        return result
+    }
+}
+
+private var defFunctions : [FunctionKey : FunctionObject] = [:]
 
 // declared functions
 var unaryFunctions: [String : (Expression) throws -> Type] = ["addTwo" : unaryActionDouble({ $0 + 2})]
@@ -65,7 +132,6 @@ func unaryActionBool(_ action: @escaping (Bool) -> (Bool)) -> (Expression) throw
         throw "Expected argument of type bool: \($0)"
     }
 }
-
 
 func binaryActionDouble(_ action: @escaping (Double, Double) -> (Double)) -> (Expression, Expression) throws -> Type {
     return {
@@ -97,7 +163,7 @@ func binaryActionBool(_ action: @escaping (Bool, Bool) -> (Bool)) -> (Expression
 func assignmentOperatorAction(left: Expression, right: Expression) throws -> Type {
     if case .Leaf(let token) = left, token.type == .Identifier {
         let result = try evaluate(right)
-        variables.updateValue(result, forKey: token.asString)
+        stack.setValue(token.asString, result)
         return result
     }
     throw "\(left) is not an L-Value"
@@ -113,6 +179,8 @@ func evaluate(_ node: Expression) throws -> Type {
             return try evaluateBinary(token, child1, child2)
         case .Block(let token, let condition, let body):
             return try evaluateBlock(token, condition, body)
+        case .FuncDef(let token, let args, let body):
+            return try evaluateFuncDef(token, args, body)
         case .Invalid(let message):
             throw message
     }
@@ -123,9 +191,7 @@ func evaluateLeaf(_ token: Token) throws  -> Type {
         case .Number:
             return Type.Double(Double(token.asString)!)
         case .Identifier:
-            guard let result = variables[token.asString] else {
-                throw "Variable \(token.asString) was not defined"
-            }
+            let result = try stack.getValue(token.asString)
             return result
         case .Keyword:
             if token.asString == "true" {
@@ -144,7 +210,7 @@ func evaluateUnary(_ token: Token, _ child: Expression) throws -> Type {
         case .Operator:
             return try evaluateUnaryOperator(token, child)
         case .Identifier:
-            return try evaluateIdentifier(token, child)
+            return try evaluateUnaryFunc(token, child)
         default:
             throw "Expected operator or function \(token)"
     }
@@ -171,6 +237,23 @@ func evaluateBlock(_ token: Token, _ condition: Expression, _ body: [Expression]
     }
 }
 
+func evaluateFuncDef(_ token: Token, _ args: [Token], _ body: [Expression]) throws -> Type {
+    let key = FunctionKey(name: token.asString, arity: args.count)
+
+    let obj = FunctionObject(paramNames: args.map({$0.asString}),
+                             fun: {
+                                var result = Type.Bool(false)
+                                for e in body {
+                                    result = try evaluate(e)
+                                }
+                                return result
+                             })
+
+    defFunctions[key] = obj
+
+    return Type.Bool(true)
+}
+
 func evaluateUnaryOperator(_ token: Token, _ child: Expression) throws -> Type {
     guard let action = unaryOperatorAction[token.asString] else {
         throw "No action for unary operator \(token)"
@@ -178,11 +261,16 @@ func evaluateUnaryOperator(_ token: Token, _ child: Expression) throws -> Type {
     return try action(child)
 }
 
-func evaluateIdentifier(_ token: Token, _ child: Expression) throws -> Type {
-    guard let action = unaryFunctions[token.asString] else {
-        throw "Function \(token) was not defined"
+func evaluateUnaryFunc(_ token: Token, _ child: Expression) throws -> Type {
+    // because we will allow to redefine functions, it makes sense to allow hiding builtin functions
+    // that's why we first try to find the function in defFunctions
+    guard let userFunc = defFunctions[FunctionKey(name: token.asString, arity: 1)] else {
+        guard let builtinFunc = unaryFunctions[token.asString] else {
+            throw "Function \(token) was not defined"
+        }
+        return try builtinFunc(child)
     }
-    return try action(child)
+    return try userFunc.call([try evaluate(child)])
 }
 
 func evaluateBinaryOperator(_ token: Token, _ child1: Expression, _ child2: Expression) throws -> Type {
@@ -193,10 +281,15 @@ func evaluateBinaryOperator(_ token: Token, _ child1: Expression, _ child2: Expr
 }
 
 func evaluateBinaryFunc(_ token: Token, _ child1: Expression, _ child2: Expression) throws -> Type {
-    guard let action = binaryFunctions[token.asString] else {
-        throw "Function \(token) was not defined"
+    // because we will allow to redefine functions, it makes sense to allow hiding builtin functions
+    // that's why we first try to find the function in defFunctions
+    guard let userFunc = defFunctions[FunctionKey(name: token.asString, arity: 2)] else {
+        guard let builtinFunc = binaryFunctions[token.asString] else {
+            throw "Function \(token) was not defined"
+        }
+        return try builtinFunc(child1, child2)
     }
-    return try action(child1, child2)
+    return try userFunc.call([try evaluate(child1), try evaluate(child2)])
 }
 
 func evaluateIf(_ token: Token, _ condition: Expression, _ body: [Expression]) throws -> Type {
@@ -227,18 +320,4 @@ func evaluateWhile(_ token: Token, _ condition: Expression, _ body: [Expression]
         test = test2
     }
     return result
-}
-
-enum Type : CustomStringConvertible {
-    case Double(Double)
-    case Bool(Bool)
-
-    var description: String {
-        switch self {
-            case .Double(let d):
-                return String(d)
-            case .Bool(let b):
-                return String(b)
-        }
-    }
 }

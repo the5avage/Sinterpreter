@@ -3,6 +3,7 @@ enum Expression : CustomStringConvertible {
     indirect case Unary(Token, Expression)
     indirect case Binary(Token, Expression, Expression)
     indirect case Block(Token, Expression, [Expression])
+    indirect case FuncDef(Token, [Token], [Expression])
     case Invalid(String)
 
     var description: String
@@ -22,6 +23,8 @@ enum Expression : CustomStringConvertible {
                 return result + ")"
             case .Invalid(let message):
                 return message
+            case .FuncDef(let token, let arguments, let body):
+                return "(\(token.asString) \(arguments.description) \(body.description))"
         }
     }
 }
@@ -50,10 +53,10 @@ func parseStatement(tokens: TokenStream) -> Expression? {
 }
 
 // This is Pratt's Algorithm
-func parse(tokens: TokenStream, rbp: Int) throws -> Expression?
+func parse(tokens: TokenStream, rbp: Int) throws -> Expression
 {
     guard var left = try tokens.next()?.nud(tokens: tokens) else {
-        return nil
+        throw "Reached end of file when expecting expression"
     }
 
     while let tok = tokens.front, rbp < tok.lbp {

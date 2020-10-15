@@ -27,7 +27,31 @@ while x > 1
     factorial = factorial * x
     x = x - 1
 end
-
 factorial
+
+def doSomething(x)
+    y = 2 * x
+    x = x + y
+end
+
+doSomething(5)
+
+def factorial(x)
+    result = 1
+    if x > 1
+        result = x * factorial(x - 1)
+    end
+    result
+end
+
+factorial(3)
+
+def doSomething(a, b)
+    a / b + 42
+end
+
+doSomething(2, 2)
+
 exit
 1+1
+
