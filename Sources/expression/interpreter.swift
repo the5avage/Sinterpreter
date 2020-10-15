@@ -54,9 +54,6 @@ let binaryOperatorAction: [String : (Expression, Expression) throws -> Type] = [
     ">" : binaryActionDoubleToBool({$0 > $1})
 ]
 
-// global variables
-//var variables: [String : Type] = [:]
-
 typealias Scope = [String : Type]
 
 struct Stack {
@@ -108,12 +105,32 @@ private struct FunctionObject {
     }
 }
 
-private var defFunctions : [FunctionKey : FunctionObject] = [:]
-
-// declared functions
-var unaryFunctions: [String : (Expression) throws -> Type] = ["addTwo" : unaryActionDouble({ $0 + 2})]
-
-var binaryFunctions: [String : (Expression, Expression) throws -> Type] = ["addTwo" : binaryActionDouble({ $0 + $1})]
+private var defFunctions : [FunctionKey : FunctionObject] = [
+    // Buildin functions can be created by providing parameter names and a function
+    // which uses the names to get the values from the stack
+    FunctionKey(name: "addTwo", arity: 1) :
+        FunctionObject(
+            paramNames: ["a"],
+            fun: {
+                guard case let Type.Double(a) = try stack.getValue("a") else {
+                    throw "Function addTwo(a): Expected double instead of bool"
+                }
+                return Type.Double(a + 2)
+            }
+        ),
+    FunctionKey(name: "addTwo", arity: 2) :
+        FunctionObject(
+            paramNames: ["a", "b"],
+            fun: {
+                guard case let Type.Double(a) = try stack.getValue("a"),
+                      case let Type.Double(b) = try stack.getValue("b")
+                else {
+                    throw "Function addTwo(a, b): Expected double instead of bool"
+                }
+                return Type.Double(a + b)
+            }
+        )
+]
 
 func unaryActionDouble(_ action: @escaping (Double) -> (Double)) -> (Expression) throws -> Type {
     return {
@@ -179,8 +196,10 @@ func evaluate(_ node: Expression) throws -> Type {
             return try evaluateBinary(token, child1, child2)
         case .Block(let token, let condition, let body):
             return try evaluateBlock(token, condition, body)
-        case .FuncDef(let token, let args, let body):
-            return try evaluateFuncDef(token, args, body)
+        case .FuncDef(let name, let args, let body):
+            return try evaluateFuncDef(name, args, body)
+        case .FuncCall(let name, let params):
+            return try evaluateFunc(name, params)
         case .Invalid(let message):
             throw message
     }
@@ -209,10 +228,8 @@ func evaluateUnary(_ token: Token, _ child: Expression) throws -> Type {
     switch token.type {
         case .Operator:
             return try evaluateUnaryOperator(token, child)
-        case .Identifier:
-            return try evaluateUnaryFunc(token, child)
         default:
-            throw "Expected operator or function \(token)"
+            throw "Expected unary operator instead of \(token)"
     }
 }
 
@@ -220,10 +237,8 @@ func evaluateBinary(_ token: Token, _ child1: Expression, _ child2: Expression) 
     switch token.type {
         case .Operator:
             return try evaluateBinaryOperator(token, child1, child2)
-        case .Identifier:
-            return try evaluateBinaryFunc(token, child1, child2)
         default:
-            throw "Expected operator or function \(token)"
+            throw "Expected binary operator instead of \(token)"
     }
 }
 
@@ -261,16 +276,12 @@ func evaluateUnaryOperator(_ token: Token, _ child: Expression) throws -> Type {
     return try action(child)
 }
 
-func evaluateUnaryFunc(_ token: Token, _ child: Expression) throws -> Type {
-    // because we will allow to redefine functions, it makes sense to allow hiding builtin functions
-    // that's why we first try to find the function in defFunctions
-    guard let userFunc = defFunctions[FunctionKey(name: token.asString, arity: 1)] else {
-        guard let builtinFunc = unaryFunctions[token.asString] else {
-            throw "Function \(token) was not defined"
-        }
-        return try builtinFunc(child)
+func evaluateFunc(_ token: Token, _ params: [Expression]) throws -> Type {
+    guard let fun = defFunctions[FunctionKey(name: token.asString, arity: params.count)] else {
+        throw "Function \(token) was not defined"
     }
-    return try userFunc.call([try evaluate(child)])
+    let args = try params.map({try evaluate($0)})
+    return try fun.call(args)
 }
 
 func evaluateBinaryOperator(_ token: Token, _ child1: Expression, _ child2: Expression) throws -> Type {
@@ -278,18 +289,6 @@ func evaluateBinaryOperator(_ token: Token, _ child1: Expression, _ child2: Expr
         throw "No action for binary operator \(token)"
     }
     return try action(child1, child2)
-}
-
-func evaluateBinaryFunc(_ token: Token, _ child1: Expression, _ child2: Expression) throws -> Type {
-    // because we will allow to redefine functions, it makes sense to allow hiding builtin functions
-    // that's why we first try to find the function in defFunctions
-    guard let userFunc = defFunctions[FunctionKey(name: token.asString, arity: 2)] else {
-        guard let builtinFunc = binaryFunctions[token.asString] else {
-            throw "Function \(token) was not defined"
-        }
-        return try builtinFunc(child1, child2)
-    }
-    return try userFunc.call([try evaluate(child1), try evaluate(child2)])
 }
 
 func evaluateIf(_ token: Token, _ condition: Expression, _ body: [Expression]) throws -> Type {

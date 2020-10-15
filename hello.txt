@@ -55,6 +55,22 @@ doSomething(2, 2)
 doSomething(factorial(4) , factorial(3) )
 
 doSomething(factorial(4), factorial(3))
+
+def add3(x, y, z)
+    x + y + z
+end
+
+add3(30, 16, -4)
+
+def evil(a, b, c)
+    result = 1
+    if a > 1
+        result = evil(a - (b*b) / (c*c), c, evil(c, a, b))
+    end
+    result
+end
+
+evil(2, 1, 1)
 exit
 1+1
 

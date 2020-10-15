@@ -82,35 +82,18 @@ func ledOperatorRight(_ tok: Token, _ exp: Expression, _ tokens: TokenStream) th
 }
 
 func parseFunctionCall(_ tok: Token, _ exp: Expression, _ tokens: TokenStream) throws -> Expression {
-    if tokens.front!.asString == ")" {
-        throw "Functions with no arguments are currently not supported: \(tok)"
+    guard case let Expression.Leaf(funName) = exp, funName.type == TokenType.Identifier else {
+        throw "Expected identifier at the left to function call operator\ninstead of \(exp)"
     }
-    guard case let Expression.Leaf(lhs) = exp, lhs.type == TokenType.Identifier else {
-        throw "Expected identifier at the left to function call operator: \(tok)"
-    }
-    let arg1 = try parse(tokens: tokens, rbp: 0)
-    if tokens.front!.asString == ")" {
-        tokens.popFront()
-        return Expression.Unary(lhs, arg1)
-    } else if tokens.front!.asString != "," {
-        fatalError("Expected , or ) while parsing argument list of function: \(tok)")
-    }
-    tokens.popFront()
-    let arg2 = try parse(tokens: tokens, rbp: 0)
-    if tokens.front!.asString != ")" {
-        fatalError("Function can have a maximum of two arguments: \(tok)")
-    }
-    tokens.popFront()
-    return Expression.Binary(lhs, arg1, arg2)
+    let args: [Expression] = try parseArgumentList(tokens)
+    return Expression.FuncCall(funName, args)
 }
-
 
 private func parseIfWhile(_ tok: Token, _ tokens: TokenStream) -> Expression {
     let condition = parseStatement(tokens: tokens)!
     let body = parseBlock(tokens)
     return Expression.Block(tok, condition, body)
 }
-
 
 private func parseBlock(_ tokens: TokenStream) -> [Expression] {
     var result: [Expression] = []
@@ -121,26 +104,19 @@ private func parseBlock(_ tokens: TokenStream) -> [Expression] {
     return result
 }
 
-private func parseFuncDefArguments(_ tokens: TokenStream) throws -> [Token] {
-    var result: [Token] = []
+private func parseArgumentList(_ tokens: TokenStream) throws -> [Expression] {
+    var result: [Expression] = []
     var run: Bool = true
 
     repeat {
-        guard let arg = tokens.front else {
-            throw "Reached end of file when expecting identifier"
-        }
-        if arg.type != .Identifier {
-            throw "Expected identifier instead of \(arg)"
-        }
-        result.append(arg)
-        tokens.popFront()
+        result.append(try parse(tokens: tokens, rbp: 0))
         guard let seperator = tokens.front else {
             throw "Reached end of file when expecting identifier"
         }
         if seperator.asString == ")" {
             run = false
         } else if seperator.asString != "," {
-            throw "Expected \",\" instead of \(seperator)"
+            throw "Expected \",\" or \")\" instead of \(seperator)"
         }
         tokens.popFront()
     } while run
@@ -149,26 +125,23 @@ private func parseFuncDefArguments(_ tokens: TokenStream) throws -> [Token] {
 }
 
 private func parseFuncDef(_ tok: Token, _ tokens: TokenStream) throws -> Expression {
-    if tokens.front == nil {
-        throw "Reached end of file when expecting identifier"
+    guard let name = tokens.front, .Identifier == name.type else {
+        throw "Expected identifier (function name) after \"def\" keyword"
     }
-    if tokens.front!.type != .Identifier {
-        throw "Expected identifier instad of \(tokens.front!)"
-    }
-    let name = tokens.front!
     tokens.popFront()
 
-    if tokens.front!.asString == "(" {
-        tokens.popFront()
-    } else {
-        throw "Expected \"(\" after function name. Instead token is \(tokens.front!)"
+    guard let openBrace = tokens.front, openBrace.asString == "(" else {
+        throw "Expected \"(\" after function name."
     }
+    tokens.popFront()
 
-    let args = try parseFuncDefArguments(tokens)
-
-    if args.count != 1 && args.count != 2 {
-        throw "Only functions with one or two arguments are currently supported"
-    }
+    let args: [Token] = try parseArgumentList(tokens).map({
+        guard case let Expression.Leaf(tok) = $0, .Identifier == tok.type else {
+            throw "Parameter in function definition must be an identifier.\n" +
+                  "Instead expression is:"
+        }
+        return tok
+    })
 
     let body = parseBlock(tokens)
 

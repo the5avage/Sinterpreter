@@ -4,6 +4,7 @@ enum Expression : CustomStringConvertible {
     indirect case Binary(Token, Expression, Expression)
     indirect case Block(Token, Expression, [Expression])
     indirect case FuncDef(Token, [Token], [Expression])
+    indirect case FuncCall(Token, [Expression])
     case Invalid(String)
 
     var description: String
@@ -23,8 +24,11 @@ enum Expression : CustomStringConvertible {
                 return result + ")"
             case .Invalid(let message):
                 return message
-            case .FuncDef(let token, let arguments, let body):
-                return "(\(token.asString) \(arguments.description) \(body.description))"
+            // Todo: print tree with () instead of default array to string conversion
+            case .FuncDef(let name, let arguments, let body):
+                return "(\(name.asString) \(arguments.description) \(body.description))"
+            case .FuncCall(let name, let params):
+                return "(\(name.asString) \(params.description))"
         }
     }
 }
