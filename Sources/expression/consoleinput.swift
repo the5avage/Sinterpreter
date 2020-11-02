@@ -1,5 +1,3 @@
-import Range
-
 class ConsoleStream : ForwardRange {
     typealias Element = Character
     var buffer: Substring = ""

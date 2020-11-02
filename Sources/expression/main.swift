@@ -1,5 +1,3 @@
-import Range
-
 if CommandLine.argc == 1 {
     let chars = CharStream(from: ConsoleStream())
     let tokens = TokenStream(from: chars)

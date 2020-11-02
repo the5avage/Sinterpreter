@@ -1,5 +1,4 @@
 import Swift
-import Range
 
 class CharStreamGeneric<R: ForwardRange> : ForwardRange where R.Element == Character {
     typealias Element = Character

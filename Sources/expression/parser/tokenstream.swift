@@ -1,5 +1,3 @@
-import Range
-
 class TokenStream : ForwardRange {
     typealias Element = Token
 

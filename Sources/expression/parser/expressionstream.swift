@@ -1,5 +1,3 @@
-import Range
-
 class ExpressionStream : ForwardRange {
     typealias Element = Expression
 
