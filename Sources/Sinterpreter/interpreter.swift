@@ -9,6 +9,8 @@ struct Interpreter {
         while let node = source.front {
             if case let Expression.Leaf(token) = node, token.asString == "exit" {
                 break
+            } else if case Expression.Invalid = node {
+                break
             }
             do {
                 print(try evaluate(node))
