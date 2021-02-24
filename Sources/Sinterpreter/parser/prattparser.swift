@@ -70,25 +70,6 @@ func parse(tokens: TokenStream, rbp: Int) throws -> Expression
     return left
 }
 
-struct Tree : CustomStringConvertible
-{
-    var children: [Expression] = []
-
-    init(from: ExpressionStream) {
-        for node in from {
-            children.append(node)
-        }
-    }
-
-    var description: String {
-        var result = ""
-        for child in children {
-            result.append("\(child.description)\n")
-        }
-        return result
-    }
-}
-
 // When an error occurs while parsing an expression we drop all tokens of that line
 private func dropLine(_ tokens: TokenStream) {
     repeat {
