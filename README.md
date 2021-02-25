@@ -16,7 +16,34 @@ Here is a list of the supported features:
 
 ## Examples
 
-TODO
+The last executed expression is the return value of the function. Therefore we write the variable result in the last line of the function.
+
+```
+def factorial(x)  
+    result = 1  
+    while x > 1  
+        result = result * x  
+        x = x - 1  
+    end  
+    result  
+end  
+
+factorial(3)  
+```
+
+We can also define a recursive version of the factorial function.
+
+```
+def factorial(x)
+    result = 1
+    if x > 1
+        result = x * factorial(x - 1)
+    end
+    result
+end
+
+factorial(3)
+```
 
 ## Notes on the Implementation
 
