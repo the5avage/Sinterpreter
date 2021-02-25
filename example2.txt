@@ -1,0 +1,10 @@
+def factorial(x)
+    result = 1
+    if x > 1
+        result = x * factorial(x - 1)
+    end
+    result
+end
+
+factorial(3)
+
